@@ -151,7 +151,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; min-height
 .feature-card p { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
 
 /* Dashboard */
-#dashboard { display: flex; flex-direction: column; background: var(--bg); }
+#dashboard { display: flex; flex-direction: column; background: transparent; }
 .dash-header {
   height: 52px; display: flex; align-items: center; justify-content: space-between;
   padding: 0 20px; border-bottom: 1px solid var(--glass-border);

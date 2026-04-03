@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from './store'
+import NeuralBackground from './components/scenes/NeuralBackground'
 
 // ═══════════════════════════════════════
 // THREE.JS SCENES
@@ -1022,6 +1023,7 @@ export default function App() {
 
   return <>
     <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}><Canvas camera={{ position: [0, 0, 60], fov: 60 }}><BgParticles /></Canvas></div>
+    {initView === 'dashboard' && <NeuralBackground />}
     <div className={initView === 'landing' ? 'view' : 'view hidden-view'}>
       <Landing onLaunch={launchDashboard} onLogoClick={goToLanding} />
     </div>

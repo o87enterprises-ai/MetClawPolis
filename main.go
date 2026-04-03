@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -95,6 +96,9 @@ func main() {
 		port = "8080"
 	}
 
+	// Find an available port
+	port = findAvailablePort(port)
+
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("🚀 Agent Platform API server starting on http://localhost%s", addr)
 	log.Printf("📋 View mock UI at http://localhost%s/", addr)
@@ -129,4 +133,37 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		"status":  "ok",
 		"service": "agent-platform",
 	})
+}
+
+// isPortAvailable checks if a port is available for binding
+func isPortAvailable(port string) bool {
+	ln, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		return false
+	}
+	ln.Close()
+	return true
+}
+
+// findAvailablePort tries to find an available port starting from the default
+func findAvailablePort(defaultPort string) string {
+	// If default port is available, use it
+	if isPortAvailable(defaultPort) {
+		return defaultPort
+	}
+
+	// Try alternative ports
+	alternativePorts := []string{"8081", "8082", "8083", "8084", "8085", "3000", "3001", "3002"}
+	
+	for _, port := range alternativePorts {
+		if isPortAvailable(port) {
+			log.Printf("⚠️  Port %s is in use, trying alternative port %s...", defaultPort, port)
+			return port
+		}
+	}
+
+	// If all alternative ports are taken, let the server fail with the default port
+	// The error will be more informative when trying to bind
+	log.Printf("⚠️  All alternative ports are in use, attempting with default port %s", defaultPort)
+	return defaultPort
 }
