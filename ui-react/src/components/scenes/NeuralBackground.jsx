@@ -69,40 +69,46 @@ const computeConnections = (nodes, maxDist) => {
   return connections;
 };
 
-// --- Component for a single glowing neuron
-const Neuron = ({ position, color, radius, active, waveProgress }) => {
+// --- Instanced neuron renderer for performance (700 nodes)
+const InstancedNeurons = ({ nodes, activeMap, waveProgress }) => {
   const meshRef = useRef();
-  const materialRef = useRef();
-  
+  const count = nodes.length;
+
   useFrame(({ clock }) => {
-    if (meshRef.current) {
-      // Pulsation based on activation and time
-      const pulse = active ? 0.9 + Math.sin(clock.getElapsedTime() * 8) * 0.15 : 0.5;
-      // Scale also influenced by wave proximity (firing effect)
+    if (!meshRef.current) return;
+    const t = clock.getElapsedTime();
+    const dummy = new THREE.Object3D();
+    const color = new THREE.Color();
+
+    for (let i = 0; i < count; i++) {
+      const node = nodes[i];
+      const active = activeMap.current[i];
+      const pulse = active ? 0.9 + Math.sin(t * 8 + i) * 0.15 : 0.5;
       const scale = (active ? 0.8 + waveProgress * 0.5 : 0.3) * pulse;
-      meshRef.current.scale.setScalar(scale);
-      // Emissive intensity
-      if (materialRef.current) {
-        const intensity = active ? 0.6 + Math.sin(clock.getElapsedTime() * 10) * 0.3 : 0.1;
-        materialRef.current.emissiveIntensity = intensity;
-      }
+
+      dummy.position.copy(node.position);
+      dummy.scale.setScalar(scale * node.radius);
+      dummy.updateMatrix();
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+
+      color.set(node.color);
+      meshRef.current.setColorAt(i, color);
     }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
   });
-  
+
   return (
-    <mesh ref={meshRef} position={position}>
-      <sphereGeometry args={[radius, 32, 32]} />
+    <instancedMesh ref={meshRef} args={[null, null, count]}>
+      <sphereGeometry args={[1, 16, 16]} />
       <meshStandardMaterial
-        ref={materialRef}
-        color={color}
-        emissive={color}
         emissiveIntensity={0.4}
         roughness={0.3}
         metalness={0.6}
         transparent
-        opacity={active ? 0.56 : 0.15}
+        opacity={0.8}
       />
-    </mesh>
+    </instancedMesh>
   );
 };
 
@@ -137,11 +143,9 @@ const DynamicConnections = ({ nodes, connections, activeMap }) => {
         positionsArray[idx+3] = posB.x;
         positionsArray[idx+4] = posB.y;
         positionsArray[idx+5] = posB.z;
-        // Color interpolation between the two nodes' colors
         const colorA = new THREE.Color(nodes[idA].color);
         const colorB = new THREE.Color(nodes[idB].color);
         const avgColor = colorA.lerp(colorB, 0.5);
-        // Brightness varies with a sine wave for "firing" effect
         const intensity = 0.5 + Math.sin(Date.now() * 0.008) * 0.3;
         avgColor.multiplyScalar(intensity);
         for (let i = 0; i < 2; i++) {
@@ -152,8 +156,6 @@ const DynamicConnections = ({ nodes, connections, activeMap }) => {
         idx += 6;
         visibleCount++;
       } else {
-        // Make line invisible by setting positions to zero (or skip, but we need to keep stride)
-        // Simpler: set positions to a point far away
         positionsArray[idx] = 0; positionsArray[idx+1] = 0; positionsArray[idx+2] = 0;
         positionsArray[idx+3] = 0; positionsArray[idx+4] = 0; positionsArray[idx+5] = 0;
         idx += 6;
@@ -161,7 +163,6 @@ const DynamicConnections = ({ nodes, connections, activeMap }) => {
     }
     geometryRef.current.attributes.position.needsUpdate = true;
     geometryRef.current.attributes.color.needsUpdate = true;
-    // Adjust draw range to only visible lines (performance)
     if (lineRef.current) {
       lineRef.current.geometry.setDrawRange(0, visibleCount * 2);
     }
@@ -181,13 +182,11 @@ const FiringParticles = ({ nodes, waveRadius, maxRadius }) => {
   const particlesRef = useRef();
   const positionsRef = useRef(new Float32Array(particleCount * 3));
   const velocitiesRef = useRef([]);
-  const activeTimeRef = useRef(0);
 
   useEffect(() => {
     const positions = new Float32Array(particleCount * 3);
     const velocities = [];
     for (let i = 0; i < particleCount; i++) {
-      // Random initial positions within sphere
       const radius = Math.random() * maxRadius;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
@@ -210,19 +209,16 @@ const FiringParticles = ({ nodes, waveRadius, maxRadius }) => {
   useFrame((_, delta) => {
     if (!particlesRef.current) return;
     const positions = particlesRef.current.geometry.attributes.position.array;
-    // Intensity peaks when wave is expanding and around mid-radius
     const intensity = Math.sin(Math.PI * waveRadius / maxRadius) * (waveRadius < maxRadius ? 1 : 0);
-    
+
     for (let i = 0; i < particleCount; i++) {
-      // Outward push when wave is active
       if (intensity > 0.1) {
         const dir = new THREE.Vector3(positions[i*3], positions[i*3+1], positions[i*3+2]).normalize();
         const speed = 0.045 * intensity;
         positions[i*3] += dir.x * speed + velocitiesRef.current[i].x * delta;
         positions[i*3+1] += dir.y * speed + velocitiesRef.current[i].y * delta;
         positions[i*3+2] += dir.z * speed + velocitiesRef.current[i].z * delta;
-        
-        // Reset particles that go too far or drift inside
+
         const mag = Math.hypot(positions[i*3], positions[i*3+1], positions[i*3+2]);
         if (mag > maxRadius + 1.5 || mag < 0.5) {
           const radius = Math.random() * maxRadius * 0.8;
@@ -233,7 +229,6 @@ const FiringParticles = ({ nodes, waveRadius, maxRadius }) => {
           positions[i*3+2] = Math.cos(phi) * radius;
         }
       } else {
-        // Drift slowly back to center during collapse
         positions[i*3] *= 0.99;
         positions[i*3+1] *= 0.99;
         positions[i*3+2] *= 0.99;
@@ -265,7 +260,6 @@ const NeuralScene = () => {
   useFrame((_, delta) => {
     const state = timeStateRef.current;
     let radius = waveRadiusRef.current;
-    let changed = false;
 
     switch (state.phase) {
       case 'expanding':
@@ -305,7 +299,6 @@ const NeuralScene = () => {
       const shouldBeActive = dist <= radius;
       if (activeMap.current[i] !== shouldBeActive) {
         activeMap.current[i] = shouldBeActive;
-        changed = true;
       }
     }
   });
@@ -320,17 +313,8 @@ const NeuralScene = () => {
       <pointLight position={[-3, 2, 5]} intensity={0.6} color="#06959d" />
       <pointLight position={[2, -3, 4]} intensity={0.5} color="#03c165" />
 
-      {/* Render all neurons */}
-      {nodes.map((node) => (
-        <Neuron
-          key={node.id}
-          position={node.position}
-          color={node.color}
-          radius={node.radius}
-          active={activeMap.current[node.id]}
-          waveProgress={waveProgress}
-        />
-      ))}
+      {/* Instanced neurons for performance */}
+      <InstancedNeurons nodes={nodes} activeMap={activeMap} waveProgress={waveProgress} />
 
       {/* Dynamic connections based on active nodes */}
       <DynamicConnections nodes={nodes} connections={connections} activeMap={activeMap} />
@@ -350,6 +334,7 @@ const NeuralBackground = () => {
         style={{ background: 'radial-gradient(circle at center, #0a0a2a 0%, #020210 100%)', pointerEvents: 'none' }}
         eventSource={undefined}
         eventPrefix="client"
+        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}
       >
         <OrbitControls
           enableZoom={false}
@@ -358,6 +343,7 @@ const NeuralBackground = () => {
           autoRotateSpeed={0.6}
           enableDamping
           dampingFactor={0.05}
+          makeDefault
         />
         <NeuralScene />
       </Canvas>
