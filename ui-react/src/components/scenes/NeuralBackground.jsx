@@ -1,7 +1,27 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+
+// --- Simple auto-rotation (replaces OrbitControls to avoid drei dependency issues)
+const AutoRotate = () => {
+  const { camera } = useThree();
+  const angleRef = useRef(0);
+  
+  useFrame((_, delta) => {
+    angleRef.current += delta * 0.6; // autoRotateSpeed equivalent
+    const radius = Math.sqrt(
+      camera.position.x * camera.position.x + 
+      camera.position.z * camera.position.z
+    );
+    const height = camera.position.y;
+    camera.position.x = Math.cos(angleRef.current) * radius;
+    camera.position.z = Math.sin(angleRef.current) * radius;
+    camera.position.y = height;
+    camera.lookAt(0, 0, 0);
+  });
+  
+  return null;
+};
 
 // --- Configuration
 const NODE_COUNT = 700;                // Total neurons in the field
@@ -336,15 +356,7 @@ const NeuralBackground = () => {
         eventPrefix="client"
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}
       >
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          autoRotate
-          autoRotateSpeed={0.6}
-          enableDamping
-          dampingFactor={0.05}
-          makeDefault
-        />
+        <AutoRotate />
         <NeuralScene />
       </Canvas>
     </div>
