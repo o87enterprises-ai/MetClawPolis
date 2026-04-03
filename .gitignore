@@ -1,0 +1,44 @@
+# Dependencies
+/vendor
+/go.sum
+go.sum
+node_modules/
+ui-react/node_modules/
+ui/node_modules/
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+metclawpolis
+agent-api
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+._*
+Thumbs.db
+
+# Docker
+postgres_data/
+redis_data/
+
+# Build artifacts
+*.tar.gz
+*.zip
+
+# Test artifacts
+coverage.out

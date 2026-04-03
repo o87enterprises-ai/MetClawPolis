@@ -1,0 +1,146 @@
+t=2026-04-03T09:34:59-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T09:34:59-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T09:34:59-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T09:34:59-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T09:34:59-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T09:35:00-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T09:35:00-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T09:35:00-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T09:35:00-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T09:35:04-0700 lvl=info msg=start pg=/api/tunnels id=9d6c46d28da658a8
+t=2026-04-03T09:35:04-0700 lvl=info msg=end pg=/api/tunnels id=9d6c46d28da658a8 status=200 dur=206.7µs
+t=2026-04-03T09:57:58-0700 lvl=info msg="received stop request" obj=app stopReq="{err:<nil> restart:false}"
+t=2026-04-03T09:57:59-0700 lvl=info msg="session closing" obj=tunnels.session err=nil
+t=2026-04-03T09:57:59-0700 lvl=info msg="accept failed" obj=tunnels.session obj=csess id=b55d1e0d407b err="reconnecting session closed"
+t=2026-04-03T09:58:12-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T09:58:12-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T09:58:12-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T09:58:12-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T09:58:12-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T09:58:12-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T09:58:12-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T09:58:12-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T09:58:12-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T09:58:17-0700 lvl=info msg=start pg=/api/tunnels id=d078e0d081d10115
+t=2026-04-03T09:58:17-0700 lvl=info msg=end pg=/api/tunnels id=d078e0d081d10115 status=200 dur=299.123µs
+t=2026-04-03T10:08:20-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T10:08:20-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T10:08:20-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T10:08:20-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T10:08:20-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T10:08:20-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T10:08:20-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T10:08:20-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T10:08:20-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T10:08:23-0700 lvl=info msg=start pg=/api/tunnels id=337e47414316618f
+t=2026-04-03T10:08:23-0700 lvl=info msg=end pg=/api/tunnels id=337e47414316618f status=200 dur=359.527µs
+t=2026-04-03T10:20:25-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T10:20:26-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T10:20:26-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T10:20:26-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T10:20:26-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T10:20:27-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T10:20:27-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T10:20:27-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T10:20:27-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T10:20:28-0700 lvl=info msg=start pg=/api/tunnels id=c5590f2020339a41
+t=2026-04-03T10:20:28-0700 lvl=info msg=end pg=/api/tunnels id=c5590f2020339a41 status=200 dur=431.494µs
+t=2026-04-03T10:21:34-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T10:21:34-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T10:21:34-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T10:21:34-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T10:21:34-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T10:21:35-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T10:21:35-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T10:21:35-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T10:21:35-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T10:21:38-0700 lvl=info msg=start pg=/api/tunnels id=5d418c41b3f6e1a0
+t=2026-04-03T10:21:38-0700 lvl=info msg=end pg=/api/tunnels id=5d418c41b3f6e1a0 status=200 dur=234.76µs
+t=2026-04-03T10:23:14-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T10:23:14-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T10:23:14-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T10:23:14-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T10:23:14-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T10:23:14-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T10:23:14-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T10:23:15-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T10:23:15-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T10:23:16-0700 lvl=info msg=start pg=/api/tunnels id=f976a22f57d774f3
+t=2026-04-03T10:23:16-0700 lvl=info msg=end pg=/api/tunnels id=f976a22f57d774f3 status=200 dur=367.505µs
+t=2026-04-03T11:44:16-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T11:44:17-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T11:44:17-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T11:44:17-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T11:44:17-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T11:44:17-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T11:44:17-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T11:44:17-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T11:44:18-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T11:44:20-0700 lvl=info msg=start pg=/api/tunnels id=186beffffd459e02
+t=2026-04-03T11:44:20-0700 lvl=info msg=end pg=/api/tunnels id=186beffffd459e02 status=200 dur=925.928µs
+t=2026-04-03T11:45:43-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T11:45:43-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T11:45:43-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T11:45:43-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T11:45:43-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T11:45:44-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T11:45:44-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T11:45:44-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T11:45:44-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T11:45:45-0700 lvl=info msg=start pg=/api/tunnels id=484cfc77ce6da2a6
+t=2026-04-03T11:45:45-0700 lvl=info msg=end pg=/api/tunnels id=484cfc77ce6da2a6 status=200 dur=369.89µs
+t=2026-04-03T11:59:02-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T11:59:02-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T11:59:02-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T11:59:02-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T11:59:02-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T11:59:02-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T11:59:02-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T11:59:03-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T11:59:03-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T11:59:04-0700 lvl=info msg=start pg=/api/tunnels id=790159862f267a93
+t=2026-04-03T11:59:04-0700 lvl=info msg=end pg=/api/tunnels id=790159862f267a93 status=200 dur=388.131µs
+t=2026-04-03T11:59:47-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T11:59:47-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T11:59:47-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T11:59:47-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T11:59:48-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T11:59:48-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T11:59:48-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T11:59:48-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T11:59:48-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T11:59:51-0700 lvl=info msg=start pg=/api/tunnels id=78885d149067a12c
+t=2026-04-03T11:59:51-0700 lvl=info msg=end pg=/api/tunnels id=78885d149067a12c status=200 dur=206.23µs
+t=2026-04-03T12:03:27-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T12:03:27-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T12:03:27-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T12:03:27-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T12:03:27-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T12:03:27-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T12:03:27-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T12:03:27-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T12:03:28-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T12:03:31-0700 lvl=info msg=start pg=/api/tunnels id=e6b9816c2b3ba62c
+t=2026-04-03T12:03:31-0700 lvl=info msg=end pg=/api/tunnels id=e6b9816c2b3ba62c status=200 dur=208.276µs
+t=2026-04-03T12:09:58-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T12:09:58-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T12:09:58-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T12:09:58-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T12:09:58-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T12:09:58-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T12:09:58-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T12:09:59-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T12:09:59-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T12:10:02-0700 lvl=info msg=start pg=/api/tunnels id=a0f7aebca3c8e1b2
+t=2026-04-03T12:10:02-0700 lvl=info msg=end pg=/api/tunnels id=a0f7aebca3c8e1b2 status=200 dur=688.281µs
+t=2026-04-03T12:20:38-0700 lvl=info msg="no configuration paths supplied"
+t=2026-04-03T12:20:38-0700 lvl=info msg="using configuration at default config path" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml"
+t=2026-04-03T12:20:38-0700 lvl=info msg="open config file" path="/Users/ducke.duck_1/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2026-04-03T12:20:38-0700 lvl=info msg="FIPS 140 mode" enabled=false
+t=2026-04-03T12:20:38-0700 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2026-04-03T12:20:38-0700 lvl=info msg="client session established" obj=tunnels.session
+t=2026-04-03T12:20:38-0700 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2026-04-03T12:20:38-0700 lvl=info msg="update available" obj=updater
+t=2026-04-03T12:20:38-0700 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:8080 url=https://unslumping-aliyah-xeric.ngrok-free.dev
+t=2026-04-03T12:20:40-0700 lvl=info msg=start pg=/api/tunnels id=04a98effa6d423cb
+t=2026-04-03T12:20:40-0700 lvl=info msg=end pg=/api/tunnels id=04a98effa6d423cb status=200 dur=373.898µs
