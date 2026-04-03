@@ -445,7 +445,7 @@ function SkillsLibraryTab() {
         })
         if (!catSkills.length) return null
         return <div key={cat.category}>
-          <div style={{ display: 'flex', alignItems: center, gap: 8, marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ fontSize: 18 }}>{cat.icon}</span>
             <span style={{ fontSize: 13, fontWeight: 600 }}>{cat.category}</span>
             <span style={{ fontSize: 10, color: 'var(--text-faint)' }}>({catSkills.length})</span>
