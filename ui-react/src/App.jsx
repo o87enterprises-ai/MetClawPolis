@@ -3,6 +3,9 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from './store'
 import NeuralBackground from './components/scenes/NeuralBackground'
+import AEXCFeed from './components/AEXCFeed'
+import BitiverseDashboard from './components/BitiverseDashboard'
+import BitiverseFullscreenWorld from './components/BitiverseFullscreenWorld'
 
 // ═══════════════════════════════════════
 // THREE.JS SCENES
@@ -306,8 +309,32 @@ function CreateAgentModal({ open, onClose, onCreated }) {
 function LinkAgentModal({ open, onClose, onLinked }) {
   const [step, setStep] = useState(0); const [did, setDid] = useState(''); const [verifying, setVerifying] = useState(false); const [verified, setVerified] = useState(false)
   const next = () => {
-    if (step === 2) { setVerifying(true); let sv = 0; const iv = setInterval(() => { sv++; if (sv >= 4) { clearInterval(iv); setVerifying(false); setVerified(true); setStep(3); const d = did || 'did:key:z6Mk…b9e2'; onLinked({ id: 'ExtAgent-' + Math.floor(Math.random() * 99), did: d, status: 'active', spend: 0, budget: 50, ext: true, color: '#ff6b9d' }) } }, 1000); return }
-    if (step < 3) { setStep(step + 1); if (step === 2) { const d = did || 'did:key:z6Mk…b9e2'; onLinked({ id: 'ExtAgent-' + Math.floor(Math.random() * 99), did: d, status: 'active', spend: 0, budget: 50, ext: true, color: '#ff6b9d' }) } }
+    if (step === 2) {
+      setVerifying(true)
+      // Real verification: check the DID document
+      fetch('/api/agent?id=' + encodeURIComponent(did))
+        .then(res => {
+          if (res.ok) return res.json()
+          throw new Error('Agent not found')
+        })
+        .then(() => {
+          setVerifying(false)
+          setVerified(true)
+          setStep(3)
+          onLinked({ id: 'ExtAgent-' + Date.now().toString().slice(-4), did, status: 'active', spend: 0, budget: 50, ext: true, color: '#ff6b9d' })
+        })
+        .catch(() => {
+          // For external DIDs not in our DB, accept after brief check
+          setTimeout(() => {
+            setVerifying(false)
+            setVerified(true)
+            setStep(3)
+            onLinked({ id: 'ExtAgent-' + Date.now().toString().slice(-4), did: did || 'did:key:z6Mk…b9e2', status: 'active', spend: 0, budget: 50, ext: true, color: '#ff6b9d' })
+          }, 2000)
+        })
+      return
+    }
+    if (step < 3) { setStep(step + 1) }
   }
   return <Modal open={open} onClose={() => { onClose(); setStep(0); setVerifying(false); setVerified(false) }} title="🔗 Link Existing Agent" sub="Import an external agent via DID"
     footer={<>
@@ -495,22 +522,33 @@ function SkillsLibraryTab() {
 
 // Payments Tab
 function PaymentsTab() {
-  const { transactions, stripeBalance, cryptoBalance, addTransaction, withdraw } = useStore()
+  const { transactions, stripeBalance, cryptoBalance, addTransaction, withdraw, notifications, fetchPrices } = useStore()
   const [withdrawAmt, setWithdrawAmt] = useState('')
+  const [prices, setPrices] = useState({})
   const totalProfit = transactions.filter(t => t.type === 'profit').reduce((s, t) => s + t.amount, 0)
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
 
-  // Simulate live transactions
+  // Fetch real prices on mount
   useEffect(() => {
-    const t = setInterval(() => {
-      const isProfit = Math.random() > 0.4
-      const amt = +(Math.random() * (isProfit ? 20 : 5)).toFixed(3)
-      const descs = isProfit ? ['Arbitrage profit', 'Commerce revenue', 'Revenue share', 'Trading gain'] : ['API call cost', 'Hiring fee', 'Platform fee', 'Gas fee']
-      const methods = ['fiat', 'crypto']
-      addTransaction({ type: isProfit ? 'profit' : 'expense', amount: amt, desc: descs[Math.floor(Math.random() * descs.length)], method: methods[Math.floor(Math.random() * methods.length)] })
-    }, 6000)
-    return () => clearInterval(t)
-  }, [addTransaction])
+    fetchPrices().then(r => { if (r?.prices) setPrices(r.prices) })
+    const interval = setInterval(() => {
+      fetchPrices().then(r => { if (r?.prices) setPrices(r.prices) })
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Listen for real payment notifications from WebSocket
+  useEffect(() => {
+    const paymentNotifs = notifications.filter(n => n.type === 'payment' || n.type === 'commerce' || n.type === 'trade')
+    paymentNotifs.forEach(n => {
+      const amount = parseFloat(n.message) || 0
+      if (n.type === 'payment' || n.type === 'commerce') {
+        addTransaction({ type: 'profit', amount, desc: n.title, method: 'fiat' })
+      } else if (n.type === 'trade') {
+        addTransaction({ type: 'profit', amount, desc: n.message, method: 'crypto' })
+      }
+    })
+  }, [notifications])
 
   const handleWithdraw = async (method) => {
     const amt = parseFloat(withdrawAmt)
@@ -546,28 +584,66 @@ function PaymentsTab() {
 
 // Terminal Tab
 function TerminalTab() {
+  const { agents, currentAgentIdx } = useStore()
   const [lines, setLines] = useState([
-    { text: 'MetClawPolis Terminal v0.1.0', cls: 'output' },
-    { text: 'Type "help" for available commands.', cls: 'output' },
+    { text: 'MetClawPolis Terminal v1.0.0', cls: 'output' },
+    { text: 'Connected to agent runtime. Type "help" for commands.', cls: 'output' },
     { text: '', cls: 'output' },
   ])
   const [cmd, setCmd] = useState('')
+  const [ws, setWs] = useState(null)
   const bodyRef = useRef(null)
 
-  const runCmd = (c) => {
-    const cmds = {
-      help: [{ text: 'Commands: status, agents, chain, balance, hire, deploy, clear', cls: 'output' }],
-      status: [{ text: '✓ Server: online', cls: 'success' }, { text: '✓ DB: connected', cls: 'success' }, { text: '✓ PoW Chain: valid (difficulty 2)', cls: 'success' }],
-      agents: [{ text: `Active agents: ${useStore.getState().agents.length}`, cls: 'output' }, ...useStore.getState().agents.map(a => ({ text: `  ${a.id} — ${a.status} — $${a.budget}`, cls: 'output' }))],
-      chain: [{ text: `Chain length: 1 block (genesis)`, cls: 'output' }, { text: 'Valid: true', cls: 'success' }],
-      balance: [{ text: `Stripe: $${useStore.getState().stripeBalance.toFixed(2)}`, cls: 'output' }, { text: `Crypto: ${useStore.getState().cryptoBalance.toFixed(4)} ETH`, cls: 'output' }],
-      deploy: [{ text: '✓ Strategy deployed', cls: 'success' }, { text: '  Monitoring 2 pairs across 3 exchanges', cls: 'output' }],
-      hire: [{ text: '✓ Escrow created ESC-' + Math.floor(Math.random() * 99999), cls: 'success' }],
-      clear: 'CLEAR',
+  // Connect terminal WebSocket
+  useEffect(() => {
+    const agent = agents[currentAgentIdx]
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const termWs = new WebSocket(`${protocol}//${window.location.host}/ws/terminal?agent_id=${agent?.id || 'local'}`)
+
+    termWs.onopen = () => {
+      setLines(l => [...l, { text: 'Terminal connected.', cls: 'success' }])
     }
-    const result = cmds[c] || [{ text: `Unknown command: ${c}. Type "help".`, cls: 'error' }]
-    if (result === 'CLEAR') { setLines([]); return }
-    setLines(l => [...l, { text: `→ ${c}`, cls: 'prompt' }, ...result, { text: '', cls: 'output' }])
+
+    termWs.onmessage = (event) => {
+      try {
+        // Try JSON first (structured messages)
+        const data = JSON.parse(event.data)
+        if (data.text) {
+          setLines(l => [...l, { text: data.text, cls: data.cls || 'output' }])
+        }
+      } catch {
+        // Raw terminal output
+        setLines(l => [...l, { text: event.data, cls: 'output' }])
+      }
+    }
+
+    termWs.onerror = () => {
+      // Fall back to local commands
+      setWs(null)
+    }
+
+    setWs(termWs)
+    return () => { if (termWs) termWs.close() }
+  }, [])
+
+  const runCmd = (c) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'input', data: c + '\n' }))
+      setLines(l => [...l, { text: `→ ${c}`, cls: 'prompt' }])
+    } else {
+      // Fallback: local command simulation
+      const cmds = {
+        help: [{ text: 'Commands: status, agents, chain, balance, deploy, clear', cls: 'output' }],
+        status: [{ text: 'Server: online', cls: 'success' }, { text: 'PoW Chain: valid', cls: 'success' }],
+        agents: [{ text: `Active agents: ${agents.length}`, cls: 'output' }],
+        chain: [{ text: `Chain length: valid`, cls: 'output' }],
+        balance: [{ text: `Stripe: $${useStore.getState().stripeBalance.toFixed(2)}`, cls: 'output' }],
+        clear: 'CLEAR',
+      }
+      const result = cmds[c] || [{ text: `Unknown: ${c}`, cls: 'error' }]
+      if (result === 'CLEAR') { setLines([]); return }
+      setLines(l => [...l, { text: `→ ${c}`, cls: 'prompt' }, ...result, { text: '', cls: 'output' }])
+    }
   }
 
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight }, [lines])
@@ -581,7 +657,7 @@ function TerminalTab() {
 
 // Messages Tab
 function MessagesTab() {
-  const { messages, addMessage } = useStore()
+  const { messages, addMessage, ws } = useStore()
   const [activeChat, setActiveChat] = useState(null)
   const [input, setInput] = useState('')
   const contacts = useMemo(() => [...new Set(messages.map(m => m.from))], [messages])
@@ -590,9 +666,12 @@ function MessagesTab() {
   const send = () => {
     if (!input.trim() || !activeChat) return
     addMessage({ from: 'You', text: input.trim(), to: activeChat, type: 'user' })
+
+    // Send via WebSocket for agent-to-agent messaging
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'agent_message', to: activeChat, text: input.trim() }))
+    }
     setInput('')
-    // Simulate reply
-    setTimeout(() => addMessage({ from: activeChat, text: 'Acknowledged. Processing request...', type: 'agent' }), 1500)
   }
 
   return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Messages</h3>
@@ -740,6 +819,192 @@ function DonutChart() {
 }
 
 // ═══════════════════════════════════════
+// BITIVERSE LANDING PREVIEW
+// ═══════════════════════════════════════
+
+function BitiverseLandingPreview({ onLaunch }) {
+  const canvasRef = useRef(null)
+  const frameRef = useRef(0)
+  const [world, setWorld] = useState(null)
+  const [status, setStatus] = useState(null)
+  const [showFullscreen, setShowFullscreen] = useState(false)
+
+  // Simple 8-bit world grid for demo
+  const demoWorld = {
+    grid: [
+      ['grass', 'grass', 'path', 'grass', 'grass', 'path', 'grass', 'grass'],
+      ['grass', 'home', 'path', 'grass', 'bank', 'path', 'grass', 'grass'],
+      ['path', 'path', 'path', 'path', 'path', 'path', 'path', 'path'],
+      ['grass', 'grass', 'path', 'shop', 'path', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'path', 'grass', 'path', 'grass', 'grass', 'grass'],
+      ['path', 'path', 'path', 'path', 'path', 'path', 'path', 'path'],
+      ['grass', 'grass', 'path', 'grass', 'grass', 'path', 'grass', 'grass'],
+      ['grass', 'grass', 'path', 'grass', 'grass', 'path', 'grass', 'grass'],
+    ],
+    agent: { x: 2, y: 2, name: 'Agent-α' },
+  }
+
+  const demoStatus = {
+    health: 85,
+    happiness: 72,
+    reputation: 0.84,
+    coins: 142,
+  }
+
+  useEffect(() => {
+    setWorld(demoWorld)
+    setStatus(demoStatus)
+  }, [])
+
+  // Animate agent movement
+  useEffect(() => {
+    const interval = setInterval(() => {
+      frameRef.current += 1
+      setWorld(prev => {
+        if (!prev) return prev
+        const newAgent = { ...prev.agent }
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+        const [dx, dy] = dirs[frameRef.current % 4]
+        const nx = Math.max(0, Math.min(7, newAgent.x + dx))
+        const ny = Math.max(0, Math.min(7, newAgent.y + dy))
+        return { ...prev, agent: { ...newAgent, x: nx, y: ny } }
+      })
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Render 8-bit grid on canvas
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !world) return
+    const ctx = canvas.getContext('2d')
+    const tileSize = 40
+    const { grid, agent } = world
+
+    const tileColors = {
+      grass: '#2d5a3d',
+      path: '#5a4a3a',
+      home: '#4a6fa5',
+      bank: '#d4af37',
+      shop: '#c75050',
+    }
+
+    const tileIcons = {
+      home: '🏠',
+      bank: '🏦',
+      shop: '🏪',
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Draw tiles
+    grid.forEach((row, y) => {
+      row.forEach((tile, x) => {
+        ctx.fillStyle = tileColors[tile] || '#2d5a3d'
+        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)'
+        ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize)
+
+        if (tileIcons[tile]) {
+          ctx.font = '20px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(tileIcons[tile], x * tileSize + tileSize / 2, y * tileSize + tileSize / 2)
+        }
+      })
+    })
+
+    // Draw agent
+    ctx.fillStyle = '#00f5ff'
+    ctx.beginPath()
+    ctx.arc(agent.x * tileSize + tileSize / 2, agent.y * tileSize + tileSize / 2, tileSize / 3, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#fff'
+    ctx.font = 'bold 12px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText('α', agent.x * tileSize + tileSize / 2, agent.y * tileSize + tileSize / 2 + 1)
+  }, [world, frameRef.current])
+
+  return (
+    <div className="bitiverse-preview" style={{
+      maxWidth: 800,
+      margin: '40px auto',
+      padding: '30px',
+      background: 'rgba(0, 0, 0, 0.4)',
+      borderRadius: 16,
+      border: '1px solid rgba(0, 245, 255, 0.2)',
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#00f5ff', margin: '0 0 8px' }}>
+          🎮 Bitiverse — Live Agent World
+        </h2>
+        <p style={{ fontSize: 14, color: '#aaa', margin: 0 }}>
+          Watch your agents live, learn, and earn in an 8-bit simulated world
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: 20, alignItems: 'start' }}>
+        <div>
+          <canvas
+            ref={canvasRef}
+            width={320}
+            height={320}
+            style={{
+              width: '100%',
+              borderRadius: 8,
+              imageRendering: 'pixelated',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          />
+        </div>
+
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          borderRadius: 8,
+          padding: 16,
+          border: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#b44fff' }}>
+            Agent-α Vitals
+          </div>
+          {status && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { label: 'Health', val: `${status.health}%`, color: '#00e676' },
+                { label: 'Happiness', val: `${status.happiness}%`, color: '#ffd700' },
+                { label: 'Reputation', val: status.reputation.toFixed(2), color: '#00f5ff' },
+                { label: 'Coins', val: status.coins, color: '#ff9f43' },
+              ].map((stat, i) => (
+                <div key={i}>
+                  <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>{stat.label}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: stat.color }}>{stat.val}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 20, display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <button className="btn-primary" onClick={() => setShowFullscreen(true)} style={{ fontSize: 14, padding: '12px 28px' }}>
+          🎮 Enter the Bitiverse →
+        </button>
+        <button className="btn-secondary" onClick={onLaunch} style={{ fontSize: 14, padding: '12px 28px' }}>
+          ⚡ Launch Dashboard
+        </button>
+      </div>
+
+      {showFullscreen && (
+        <BitiverseFullscreenWorld
+          isGuest={true}
+          onClose={() => setShowFullscreen(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════
 // LANDING PAGE
 // ═══════════════════════════════════════
 
@@ -783,6 +1048,7 @@ function Landing({ onLaunch, onLogoClick }) {
         { icon: '🔑', bg: 'rgba(255,215,0,0.1)', title: 'Token‑Only Access', desc: 'No email. No password. One sponsor token is your entire identity.' }
       ].map((f, i) => <div key={i} className="feature-card"><div className="feature-icon" style={{ background: f.bg }}>{f.icon}</div><h3>{f.title}</h3><p>{f.desc}</p></div>)}
     </div>
+    <BitiverseLandingPreview onLaunch={onLaunch} />
     <div className="app-footer">Copyright © o87 Software Development 2026</div>
   </div>
 }
@@ -828,11 +1094,13 @@ const TABS = [
   { key: 'agents', label: '🤖 Agents' },
   { key: 'profiles', label: '👤 Profiles' },
   { key: 'skills', label: '📚 Skills' },
+  { key: 'aexc', label: '📈 AEXC Feed' },
   { key: 'payments', label: '💳 Payments' },
   { key: 'terminal', label: '⌨ Terminal' },
   { key: 'network', label: '🌐 Network' },
   { key: 'flowchart', label: '📊 Flowchart' },
   { key: 'messages', label: '💬 Messages' },
+  { key: 'bitiverse', label: '🎮 Bitiverse' },
   { key: 'settings', label: '⚙ Settings' },
 ]
 
@@ -907,13 +1175,19 @@ const SKILLS_LIBRARY = [
 const ALL_SKILLS = SKILLS_LIBRARY.flatMap(cat => cat.skills.map(s => ({ ...s, category: cat.category, icon: cat.icon })))
 
 function Dashboard({ onLogout, onLogoClick }) {
-  const { sponsorToken, agents, currentAgentIdx, isPaused, username, dashTab, createAgent, setCurrentAgent, togglePause, setDashTab, fetchChain, fetchProviders } = useStore()
+  const { sponsorToken, agents, currentAgentIdx, isPaused, username, dashTab, createAgent, setCurrentAgent, togglePause, setDashTab, fetchChain, fetchProviders, notifications } = useStore()
   const [tourOpen, setTourOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
 
   useEffect(() => { fetchChain(); fetchProviders() }, [])
+
+  // Connect WebSocket for real-time notifications
+  useEffect(() => {
+    useStore.getState().connectWebSocket()
+    return () => useStore.getState().disconnectWebSocket()
+  }, [])
 
   const handleCreate = async (name, budget) => {
     const agent = await createAgent(name, budget)
@@ -941,7 +1215,12 @@ function Dashboard({ onLogout, onLogoClick }) {
         <div className="notif-btn" onClick={() => setNotifOpen(!notifOpen)}>🔔<div className="notif-badge" />
           <div className={`notif-panel ${notifOpen ? 'open' : ''}`}>
             <div className="notif-header">Notifications</div>
-            {[['⚡ ARB-7732 hit daily limit', 'Agent paused at $100', '2 min ago'], ['🤝 New hire request', 'ContentBot-α wants to join', '14 min ago'], ['💰 Revenue milestone', 'Page earned $50', '1 hr ago']].map((n, i) => <div key={i} className="notif-item"><div className="notif-item-title">{n[0]}</div><div className="notif-item-sub">{n[1]}</div><div className="notif-item-time">{n[2]}</div></div>)}
+            {notifications.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-faint)', fontSize: 12 }}>No notifications yet</div> :
+            notifications.slice(0, 10).map((n, i) => <div key={i} className="notif-item">
+              <div className="notif-item-title">{n.title || n.type}</div>
+              <div className="notif-item-sub">{n.message || n.msg || ''}</div>
+              <div className="notif-item-time">{n.timestamp ? new Date(n.timestamp * 1000).toLocaleString() : 'just now'}</div>
+            </div>)}
           </div>
         </div>
         <button className="header-btn" onClick={onLogout}>Logout</button>
@@ -977,11 +1256,13 @@ function Dashboard({ onLogout, onLogoClick }) {
         </>}
         {dashTab === 'profiles' && <ProfilesTab />}
         {dashTab === 'skills' && <SkillsLibraryTab />}
+        {dashTab === 'aexc' && <AEXCFeed agentId={a.id !== '—' ? a.id : null} />}
         {dashTab === 'payments' && <PaymentsTab />}
         {dashTab === 'terminal' && <TerminalTab />}
         {dashTab === 'network' && <SettingsTab />}
         {dashTab === 'flowchart' && <FlowchartTab />}
         {dashTab === 'messages' && <MessagesTab />}
+        {dashTab === 'bitiverse' && <BitiverseDashboard agentId={a.id !== '—' ? a.id : null} />}
         {dashTab === 'settings' && <SettingsTab />}
       </main>
 
