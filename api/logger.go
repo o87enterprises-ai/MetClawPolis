@@ -87,3 +87,13 @@ func GetChainHandler(w http.ResponseWriter, r *http.Request) {
 		"length":     len(Blockchain.GetChainJSON()),
 	})
 }
+
+// LogBitiverseAction logs a Bitiverse action to the immutable chain
+func LogBitiverseAction(agentID, actionType, action string, result string, meta string) chain.Block {
+	req := ActionLogRequest{
+		AgentID: agentID,
+		Type:    "BITIVERSE_" + actionType,
+		Meta:    `{"action":"` + action + `","result":"` + result + `",` + meta + `}`,
+	}
+	return logAction(req, "")
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import BitiverseDisclaimer, { hasAcceptedDisclaimer } from './BitiverseDisclaimer'
 import BitiverseFullscreenWorld from './BitiverseFullscreenWorld'
+import BitsburghLiveView from './BitsburghLiveView'
 
 // ═══════════════════════════════════════
 // BITIVERSE CANVAS RENDERER
@@ -98,6 +99,7 @@ export default function BitiverseDashboard({ agentId }) {
   const [showDisclaimer, setShowDisclaimer] = useState(false)
   const [isGlobal, setIsGlobal] = useState(!agentId)
   const [showFullscreen, setShowFullscreen] = useState(false)
+  const [showBitsburghLive, setShowBitsburghLive] = useState(false)
 
   // Determine if we're in global spectator mode
   useEffect(() => {
@@ -157,9 +159,12 @@ export default function BitiverseDashboard({ agentId }) {
       if (res.ok) {
         const data = await res.json()
         setWorldView(data)
+      } else if (isGlobal) {
+        // Global mode may not have a world endpoint — suppress error
+        setWorldView(null)
       }
     } catch (err) {
-      console.error('Failed to fetch world view:', err)
+      // Graceful: endpoint may not be available
     }
   }, [agentId, isGlobal])
 
@@ -171,9 +176,11 @@ export default function BitiverseDashboard({ agentId }) {
       if (res.ok) {
         const data = await res.json()
         setStatusReport(data)
+      } else if (isGlobal) {
+        setStatusReport(null)
       }
     } catch (err) {
-      console.error('Failed to fetch status:', err)
+      // Graceful: endpoint may not be available
     }
   }, [agentId, isGlobal])
 
@@ -185,9 +192,11 @@ export default function BitiverseDashboard({ agentId }) {
       if (res.ok) {
         const data = await res.json()
         setStats(data)
+      } else if (isGlobal) {
+        setStats(null)
       }
     } catch (err) {
-      console.error('Failed to fetch stats:', err)
+      // Graceful: endpoint may not be available
     }
   }, [agentId, isGlobal])
 
@@ -302,6 +311,12 @@ export default function BitiverseDashboard({ agentId }) {
           <div style={styles.headerRight}>
             <div style={styles.enabledBadge}>👁️ Live View</div>
             <button
+              onClick={() => setShowBitsburghLive(true)}
+              style={styles.viewLiveBtn}
+            >
+              🏙️ View Live
+            </button>
+            <button
               onClick={() => setShowFullscreen(true)}
               style={styles.fullscreenBtn}
             >
@@ -363,6 +378,22 @@ export default function BitiverseDashboard({ agentId }) {
             )}
           </div>
         </div>
+
+        {/* Fullscreen World Viewer for Global Mode */}
+        {showFullscreen && (
+          <BitiverseFullscreenWorld
+            agentId={null}
+            isGuest={true}
+            onClose={() => setShowFullscreen(false)}
+          />
+        )}
+
+        {/* Bitsburgh Live View */}
+        {showBitsburghLive && (
+          <BitsburghLiveView
+            onClose={() => setShowBitsburghLive(false)}
+          />
+        )}
       </div>
     )
   }
@@ -401,6 +432,12 @@ export default function BitiverseDashboard({ agentId }) {
           ) : (
             <>
               <div style={styles.enabledBadge}>✓ Active</div>
+              <button
+                onClick={() => setShowBitsburghLive(true)}
+                style={styles.viewLiveBtn}
+              >
+                🏙️ View Live
+              </button>
               <button
                 onClick={() => setShowFullscreen(true)}
                 style={styles.fullscreenBtn}
@@ -577,6 +614,13 @@ export default function BitiverseDashboard({ agentId }) {
           onClose={() => setShowFullscreen(false)}
         />
       )}
+
+      {/* Bitsburgh Live View */}
+      {showBitsburghLive && (
+        <BitsburghLiveView
+          onClose={() => setShowBitsburghLive(false)}
+        />
+      )}
     </div>
   )
 }
@@ -630,6 +674,18 @@ const styles = {
     color: '#00e676',
     fontSize: '13px',
     fontWeight: 600,
+  },
+  viewLiveBtn: {
+    padding: '6px 12px',
+    background: 'linear-gradient(135deg, rgba(0,245,255,0.2) 0%, rgba(180,79,255,0.2) 100%)',
+    border: '1px solid rgba(0, 245, 255, 0.5)',
+    borderRadius: '6px',
+    color: '#00f5ff',
+    fontSize: '13px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    marginLeft: 8,
+    boxShadow: '0 0 10px rgba(0,245,255,0.3)',
   },
   fullscreenBtn: {
     padding: '6px 12px',

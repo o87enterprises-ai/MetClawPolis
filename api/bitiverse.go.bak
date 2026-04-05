@@ -1,0 +1,248 @@
+package api
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+
+	"github.com/metclawpolis/agent-platform/bitiverse"
+)
+
+var bitiverseOrchestrator *bitiverse.Orchestrator
+
+// InitBitiverse initializes the Bitiverse orchestrator
+func InitBitiverse() {
+	bitiverseOrchestrator = bitiverse.NewOrchestrator(bitiverse.DefaultBitiverseConfig())
+	log.Println("Bitiverse orchestrator initialized")
+}
+
+// GetBitiverseOrchestrator returns the Bitiverse orchestrator
+func GetBitiverseOrchestrator() *bitiverse.Orchestrator {
+	if bitiverseOrchestrator == nil {
+		InitBitiverse()
+	}
+	return bitiverseOrchestrator
+}
+
+// EnableBitiverseHandler enables Bitiverse for an agent
+func EnableBitiverseHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	agentID := r.Header.Get("X-Verified-Agent-ID")
+	if agentID == "" {
+		var req struct {
+			AgentID string `json:"agent_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.AgentID == "" {
+			http.Error(w, `{"error":"agent_id is required"}`, http.StatusBadRequest)
+			return
+		}
+		agentID = req.AgentID
+	}
+
+	orchestrator := GetBitiverseOrchestrator()
+
+	instance, err := orchestrator.EnableBitiverse(agentID)
+	if err != nil {
+		log.Printf("EnableBitiverse error: %v", err)
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":   "bitiverse_enabled",
+		"agent_id": agentID,
+		"instance": map[string]interface{}{
+			"active": instance.Active,
+			"world": map[string]interface{}{
+				"width":  instance.State.WorldState.Width,
+				"height": instance.State.WorldState.Height,
+			},
+		},
+	})
+}
+
+// BitiverseWorldViewHandler returns the current world view
+func BitiverseWorldViewHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	agentID := r.URL.Query().Get("agent_id")
+	if agentID == "" {
+		agentID = r.Header.Get("X-Verified-Agent-ID")
+	}
+
+	if agentID == "" {
+		http.Error(w, `{"error":"agent_id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	orchestrator := GetBitiverseOrchestrator()
+
+	view, err := orchestrator.GetWorldView(agentID)
+	if err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(view))
+}
+
+// BitiverseStatusHandler returns the agent's status report
+func BitiverseStatusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	agentID := r.URL.Query().Get("agent_id")
+	if agentID == "" {
+		agentID = r.Header.Get("X-Verified-Agent-ID")
+	}
+
+	if agentID == "" {
+		http.Error(w, `{"error":"agent_id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	orchestrator := GetBitiverseOrchestrator()
+
+	report, err := orchestrator.GetStatusReport(agentID)
+	if err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(report))
+}
+
+// BitiverseTurnHandler executes one turn for the agent
+func BitiverseTurnHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	agentID := r.Header.Get("X-Verified-Agent-ID")
+	if agentID == "" {
+		http.Error(w, `{"error":"authentication required"}`, http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		Task *bitiverse.BossTask `json:"task"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		req.Task = nil
+	}
+
+	orchestrator := GetBitiverseOrchestrator()
+
+	result, err := orchestrator.RunTurn(agentID, req.Task)
+	if err != nil {
+		log.Printf("BitiverseTurn error: %v", err)
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(result))
+}
+
+// BitiverseStatsHandler returns comprehensive agent stats
+func BitiverseStatsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	agentID := r.URL.Query().Get("agent_id")
+	if agentID == "" {
+		agentID = r.Header.Get("X-Verified-Agent-ID")
+	}
+
+	if agentID == "" {
+		http.Error(w, `{"error":"agent_id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	orchestrator := GetBitiverseOrchestrator()
+
+	stats, err := orchestrator.GetAgentStats(agentID)
+	if err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}
+
+// BitiverseAssignTaskHandler assigns a task from the Boss
+func BitiverseAssignTaskHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		AgentID     string  `json:"agent_id"`
+		Description string  `json:"description"`
+		Reward      int     `json:"reward"`
+		Difficulty  int     `json:"difficulty"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.AgentID == "" || req.Description == "" {
+		http.Error(w, `{"error":"agent_id and description are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	task := &bitiverse.BossTask{
+		ID:          "task_001",
+		Description: req.Description,
+		Reward:      req.Reward,
+		Difficulty:  req.Difficulty,
+		Status:      "pending",
+	}
+
+	orchestrator := GetBitiverseOrchestrator()
+
+	if err := orchestrator.AssignTask(req.AgentID, task); err != nil {
+		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "task_assigned",
+		"task":   task,
+	})
+}
+
+// BitiverseEconomyHandler returns economy information
+func BitiverseEconomyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	orchestrator := GetBitiverseOrchestrator()
+	ledger := orchestrator.GetLedger()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ledger.GetEconomyStats())
+}

@@ -787,6 +787,35 @@ export const CHARACTERS = {
     name: 'Farmer', skinColor: P.sk4, hairColor: P.hr_brown,
     clothColor: P.cl_green, hairStyle: 'hat',
   },
+  // NPC developers for the business building
+  dev_lead: {
+    name: 'Alex Dev', skinColor: P.sk3, hairColor: P.hr_black,
+    clothColor: P.cl_blue, hairStyle: 'short',
+  },
+  dev_junior: {
+    name: 'Sam Code', skinColor: P.sk2, hairColor: P.hr_brown,
+    clothColor: P.cl_green, hairStyle: 'cap',
+  },
+  dev_senior: {
+    name: 'Jordan Bit', skinColor: P.sk1, hairColor: P.hr_blonde,
+    clothColor: P.cl_purple, hairStyle: 'long',
+  },
+  designer: {
+    name: 'Riley Pixel', skinColor: P.sk4, hairColor: P.hr_red,
+    clothColor: P.cl_red, hairStyle: 'ponytail',
+  },
+  pm: {
+    name: 'Casey Plan', skinColor: P.sk2, hairColor: P.hr_silver,
+    clothColor: P.cl_black, hairStyle: 'slick',
+  },
+  devops: {
+    name: 'Morgan Deploy', skinColor: P.sk1, hairColor: P.hr_black,
+    clothColor: P.cl_grey, hairStyle: 'robot',
+  },
+  intern: {
+    name: 'Taylor Learn', skinColor: P.sk3, hairColor: P.hr_blonde,
+    clothColor: P.cl_orange, hairStyle: 'short',
+  },
 }
 
 // ─── BUILDING DEFINITIONS ───
@@ -803,6 +832,7 @@ export const BUILDINGS = {
   farm:     { w: 4, h: 2, type: 'farm',     label: '' },
   police:   { w: 3, h: 2, type: 'police',   label: '' },
   hospital: { w: 3, h: 2, type: 'hospital', label: '' },
+  business: { w: 5, h: 4, type: 'business', label: 'Bitsburgh Dev Co.' },
 }
 
 // ─── BITSBURG MAP ───
@@ -894,6 +924,8 @@ const buildingPlacements = [
   { x: 2, y: 38, type: 'farm' },
   // Watermill
   { x: 18, y: 6, type: 'watermill' },
+  // Business building (Dev company) - placed in business district
+  { x: 18, y: 26, type: 'business' },
 ]
 
 // Fill building tiles
@@ -918,6 +950,7 @@ const buildings = buildingPlacements.map(b => {
 
 function getZone(x, y) {
   if (x < 15 && y < 12) return 'residential'
+  if (x >= 15 && x < 25 && y >= 24 && y < 32) return 'business_dev'
   if (x < 15 && y > 25) return 'business'
   if (x > 15 && x < 30 && y < 12) return 'municipal'
   if (x > 35 && y < 22) return 'recreation'

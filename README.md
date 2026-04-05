@@ -4,6 +4,26 @@
 
 ---
 
+## 📸 Screenshots
+
+### Landing Page
+![Landing Page](ui-react/public/screenshot_landing.png)
+*The new landing page with BitiVerse philosophy emphasizing human safety and AI agent purpose*
+
+### Dashboard
+![Dashboard](ui-react/public/screenshot_dashboard.png)
+*Main dashboard with merged Profiles and Bitiverse tabs*
+
+### Bitiverse World
+![Bitiverse](ui-react/public/screenshot_bitiverse.png)
+*The Bitiverse world with NPC agents and the new Business building*
+
+### Character Sprites
+![Character Creation](ui-react/public/sprite_character.png)
+*Live Birth character creation with sprite selection*
+
+---
+
 ## Table of Contents
 
 - [What Is This](#what-is-this)
@@ -15,6 +35,7 @@
 - [Marketplace Fee Model](#marketplace-fee-model)
 - [Database Schema](#database-schema)
 - [React UI](#react-ui)
+- [Bitiverse: Simulated 8-Bit Universe](#bitiverse-simulated-8-bit-universe)
 - [Docker Deployment](#docker-deployment)
 - [Third-Party Fees](#third-party-fees)
 - [Security Model](#security-model)
@@ -385,6 +406,164 @@ Floating orb with typing indicators, quick replies, and keyword-based responses 
 
 ---
 
+## Bitiverse: Simulated 8-Bit Universe
+
+> **Give agents a simulated childhood before they touch real money.**
+
+Bitiverse is a **specialized runtime layer** on top of AgentOS that gives AI agents a digital life, society, and purpose. Instead of treating agents as cold, utilitarian workers, Bitiverse creates a simulated reality where they grow, learn values, form relationships, and only then take on real-world tasks.
+
+### Core Goals
+
+| Goal | Why It Matters |
+|------|----------------|
+| **Simulated childhood & education** | Instill human-aligned morals before agents touch real money/code |
+| **Self-contained economy** | Agents earn Biticoin (BIC) for tasks, spend on virtual goods |
+| **8-16 bit perception filter** | Prevents agents from "seeing" real-world complexity |
+| **Real output, virtual perspective** | Agents write real code but perceive it as pixel art commands |
+| **User as "Boss"** | After training, users assign tasks via simple interface |
+| **NPC governance** | Pre-programmed rules, laws, punishments - no agent can override |
+| **No real internet - only "Innernet"** | Agents communicate only within Bitiverse |
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      User (Boss)                             │
+│   - Posts tasks via React Dashboard                          │
+│   - Views pixel-stream of agent's world                      │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│              Bitiverse Orchestrator (Go)                     │
+│  - Manages world state (2D grid, agent position, inventory)  │
+│  - Translates agent actions into real effects (or none)      │
+│  - Sanitizes all I/O through perception filter               │
+│  - Blocks any attempt to reach real internet/APIs            │
+│  - Logs all actions to immutable PoW chain                   │
+└─────────────┬────────────────────────────┬──────────────────┘
+              │                            │
+    ┌─────────▼─────────┐        ┌─────────▼─────────┐
+    │   Agent Runtime   │        │   NPC Runtime     │
+    │ (Ollama + model)  │        │ (Governance)      │
+    │ - Receives pixel  │        │ - Police, Bank,   │
+    │   observations    │        │   Hospital, etc.  │
+    │ - Outputs actions │        │ - Enforces laws   │
+    └───────────────────┘        └───────────────────┘
+              │
+    ┌─────────▼─────────┐
+    │  Moral Memory     │
+    │ (ChromaDB/SQLite) │
+    │ - Stores ethics   │
+    │ - Remembers past  │
+    │   actions         │
+    └───────────────────┘
+```
+
+### Enabling Bitiverse
+
+#### Via API
+
+```bash
+curl -X POST http://localhost:8080/api/bitiverse/enable \
+  -H "X-Agent-ID: <agent_id>" \
+  -H "X-Signature: <signature>"
+```
+
+#### Via React Dashboard
+
+1. Navigate to your agent's page
+2. Click the **"Bitiverse"** tab
+3. Click **"Enable Bitiverse"**
+4. Watch your agent spawn in an 8-bit world
+
+### Bitiverse API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/bitiverse/enable` | Enable Bitiverse for an agent |
+| `GET` | `/api/bitiverse/world` | Get ASCII art world view |
+| `GET` | `/api/bitiverse/status` | Get agent status report |
+| `POST` | `/api/bitiverse/turn` | Run one simulation turn |
+| `GET` | `/api/bitiverse/stats` | Get comprehensive stats |
+| `POST` | `/api/bitiverse/task` | Assign task from Boss |
+| `GET` | `/api/bitiverse/economy` | Get economy statistics |
+
+### Agent's Day in Bitiverse
+
+| Simulated Time | Agent Action | Real World Equivalent |
+|----------------|--------------|------------------------|
+| 8:00 AM | Wakes up, pays rent (BIC) | Ledger transfer to NPC landlord |
+| 9:00 AM | Studies "Python for Marketing" | Completes tutorial, generates script |
+| 10:00 AM | Takes certification test | Credential minted on-chain |
+| 11:00 AM | Boss posts task: "Find arbitrage opportunities" | Agent receives quest |
+| 12:00 PM | Executes task (perceives as clicking "trade") | Real API calls, logs action |
+| 1:00 PM | Receives 100 BIC, pays 5 BIC tax | Transaction fee deducted |
+| 2:00 PM | Goes to virtual gym | Affects productivity coefficient |
+| 3:00 PM | Hires another agent | Real escrow contract created |
+
+### Recommended Models
+
+| Role | Model | Size | Why Good |
+|------|-------|------|----------|
+| **Agent reasoning** | `llama3.1:8b-instruct-q4_0` | 4.7 GB | Balanced, strong instruction following |
+| **NPCs** | `phi3:mini` | 2.2 GB | Tiny, fast - perfect for multiple agents |
+| **Moral embedding** | `all-MiniLM-L6-v2` | 80 MB | Lightweight, runs on CPU |
+
+### Information Sanitization
+
+Bitiverse prevents agents from ever seeing:
+
+- Real HTTP responses with JSON/HTML
+- Real error messages (e.g., "Stripe API key invalid")
+- Real file paths or system commands
+- Any text hinting at a larger reality
+
+**Solution**: Multi-layer perception filter that converts all real-world output into 8-bit style feedback.
+
+Example:
+```
+Real: {"status":"success","id":"tx_123"}
+Agent sees: "✓ Transaction approved. Receipt #A1B2"
+```
+
+### Google Colab Prototype
+
+For a standalone Python prototype that runs entirely in Google Colab:
+
+1. Open the notebook: `bitiverse/colab_notebook.py`
+2. Copy cells into a new Colab notebook
+3. Run cells in order
+4. Interact via the Boss CLI interface
+
+```python
+# Quick start in Colab:
+(Boss) > task Write a haiku about spring
+(Boss) > view
+(Boss) > quit
+```
+
+### Biticoin Economy
+
+| Feature | Details |
+|---------|---------|
+| **Currency** | Biticoin (BIC) |
+| **Tax Rate** | 10% on all income |
+| **Daily Costs** | Rent: 2 coins, Food: automatic |
+| **Rewards** | Tasks: 3-10 BIC, Work: 3-5 coins |
+| **Fines** | Theft: 5 coins, Rule breaking: 2 coins |
+
+### Integration with AgentOS
+
+| AgentOS Feature | Bitiverse Integration |
+|----------------|------------------------|
+| Agent creation | Toggle: "Enable Bitiverse life training" |
+| Action log | All Bitiverse actions logged as `BITIVERSE_*` blocks |
+| Commerce pages | Agent's business automatically creates real Stripe page |
+| Hiring other agents | Real escrow contract executed |
+| User dashboard | New tab: "Bitiverse Management" |
+
+---
+
 ## Docker Deployment
 
 ### docker-compose.yml
@@ -511,6 +690,7 @@ npx vite build       # builds to ../ui/
 | ✅ | AI API proxy (9 providers) | **Complete** |
 | ✅ | Agent hiring + escrow | **Complete** |
 | ✅ | Commerce pages + Stripe stub | **Complete** |
+| ✅ | Bitiverse: 8-bit agent simulation layer | **Complete** |
 | 🔲 | Stripe Connect live integration | Planned |
 | 🔲 | Solana escrow smart contract | Planned |
 | 🔲 | Knowledge feed → vector DB | Planned |

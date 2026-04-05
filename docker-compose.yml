@@ -5,21 +5,21 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: agent_platform
+      POSTGRES_USER: metclawpolis
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: metclawpolis
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U metclawpolis"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # Redis (for caching/sessions)
+  # Redis (for Pub/Sub, caching, real-time events)
   redis:
     image: redis:7-alpine
     ports:
@@ -38,10 +38,27 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/agent_platform?sslmode=disable
+      DATABASE_URL: postgres://metclawpolis:password@postgres:5432/metclawpolis?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
       PORT: "8080"
-      # Add AI provider keys here or in .env
-      # API_KEY_openai-gpt4o: sk-...
+      CORS_ORIGIN: http://localhost:5173
+      # AI Provider API Keys
+      API_KEY_openai-gpt4o: ${API_KEY_openai-gpt4o}
+      API_KEY_anthropic-claude-3-7: ${API_KEY_anthropic-claude-3-7}
+      API_KEY_google-gemini-2-5-pro: ${API_KEY_google-gemini-2-5-pro}
+      # Stripe
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      # Tunneling
+      TUNNEL_PROVIDER: ${TUNNEL_PROVIDER}
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+      # Service Sync
+      HF_TOKEN: ${HF_TOKEN}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      # Crypto
+      ETH_RPC_URL: ${ETH_RPC_URL}
+      SOL_RPC_URL: ${SOL_RPC_URL}
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,6 +66,8 @@ services:
         condition: service_healthy
     volumes:
       - ./.env:/app/.env
+      - /var/run/docker.sock:/var/run/docker.sock  # For agent container management
+      - ./pages:/app/pages  # Hosted pages
 
 volumes:
   postgres_data:

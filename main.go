@@ -88,6 +88,12 @@ func main() {
 	mux := http.NewServeMux()
 	handler := recoverMiddleware(mux)
 
+	// ── Auth endpoints (email + token sign-in) ──
+	mux.HandleFunc("/api/auth/request", api.RequestTokenHandler)
+	mux.HandleFunc("/api/auth/verify", api.VerifyTokenHandler)
+	mux.HandleFunc("/api/auth/validate", api.ValidateSessionHandler)
+	mux.HandleFunc("/api/auth/logout", api.LogoutHandler)
+
 	// ── Public endpoints ──
 	mux.HandleFunc("/health", healthHandler)
 	mux.HandleFunc("/api/chain", api.AuthMiddleware(api.GetChainHandler))

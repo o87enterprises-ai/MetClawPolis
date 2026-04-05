@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	MarketplaceFeeRate   = 0.005 // 0.5% transaction fee
-	HiringFeeRate        = 0.01  // 1.0% hiring fee
+	MarketplaceFeeRate   = 0.07 // 7% network fee on all transactions
+	HiringFeeRate        = 0.07 // 7% hiring fee (aligned with network fee)
 )
 
 // HireAgentRequest is the request for agent hiring

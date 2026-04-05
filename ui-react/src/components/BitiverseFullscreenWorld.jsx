@@ -24,6 +24,7 @@ import {
   TILE_SIZE,
   T,
 } from '../bitiverse/sprites'
+import BusinessBuildingInterior from './BusinessBuildingInterior'
 
 // ─── NPC PATROL DEFINITIONS ───
 const NPC_PATROLS = [
@@ -148,6 +149,7 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
     stats: { energy: 100, stress: 0, level: 1, coins: 142 },
     messages: LIVE_MESSAGES.slice(0, 5),
   })
+  const [insideBuilding, setInsideBuilding] = useState(null)
 
   // Keyboard input
   useEffect(() => {
@@ -156,8 +158,31 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
         e.preventDefault()
       }
-      if (e.key === 'Escape' && onClose) onClose()
+      if (e.key === 'Escape') {
+        if (insideBuilding) {
+          setInsideBuilding(null)
+        } else if (onClose) {
+          onClose()
+        }
+      }
       if (e.key === 'f' || e.key === 'F') toggleFullscreen()
+      if (e.key === 'e' || e.key === 'E') {
+        // Enter/Exit building
+        if (insideBuilding) {
+          setInsideBuilding(null)
+        } else {
+          // Check if player is near business building
+          const state = stateRef.current
+          const px = Math.floor(state.player.x)
+          const py = Math.floor(state.player.y)
+          for (const b of BITSBURG_BUILDINGS) {
+            if (b.type === 'business' && px >= b.x && px < b.x + b.w && py >= b.y && py < b.y + b.h) {
+              setInsideBuilding(b)
+              break
+            }
+          }
+        }
+      }
     }
     const onUp = (e) => { keysRef.current[e.key] = false }
     window.addEventListener('keydown', onDown)
@@ -166,7 +191,7 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
       window.removeEventListener('keydown', onDown)
       window.removeEventListener('keyup', onUp)
     }
-  }, [])
+  }, [insideBuilding, onClose])
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -216,11 +241,13 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
     function getZoneName(tx, ty) {
       for (const b of BITSBURG_BUILDINGS) {
         if (tx >= b.x && tx < b.x + b.w && ty >= b.y && ty < b.y + b.h) {
+          if (b.type === 'business') return 'Bitsburgh Dev Co.'
           return b.zone
         }
       }
       if (tx < 15 && ty < 12) return 'residential'
       if (tx < 15 && ty > 25) return 'business'
+      if (tx >= 15 && tx < 25 && ty >= 24 && ty < 32) return 'business_dev'
       if (tx > 15 && tx < 30 && ty < 12) return 'municipal'
       if (tx > 35 && ty < 22) return 'recreation'
       if (tx > 35 && ty > 25) return 'banking'
@@ -485,6 +512,11 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
     setTimeout(() => { keysRef.current[keyMap[dir]] = false }, 100)
   }, [])
 
+  // If inside a building, show the interior view
+  if (insideBuilding && insideBuilding.type === 'business') {
+    return <BusinessBuildingInterior onClose={() => setInsideBuilding(null)} />
+  }
+
   return (
     <div style={styles.container} ref={containerRef}>
       {/* Canvas */}
@@ -514,35 +546,35 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
       </div>
 
       {/* HUD Overlay */}
-      <div style={styles.hud}>
+      <div className="bitiverse-hud" style={styles.hud}>
         {/* Top bar */}
-        <div style={styles.topBar}>
-          <div style={styles.zoneBadge}>
+        <div className="bitiverse-topbar" style={styles.topBar}>
+          <div className="bitiverse-zone-badge" style={styles.zoneBadge}>
             <span style={{ fontSize: 14 }}>📍</span>
-            <span>{hudState.zone}</span>
+            <span className="bitiverse-zone-name">{hudState.zone}</span>
           </div>
 
-          <div style={styles.statsBar}>
-            <span style={styles.statItem}>
-              ⚡ Energy: <strong>{hudState.stats.energy}%</strong>
+          <div className="bitiverse-stats" style={styles.statsBar}>
+            <span className="bitiverse-stat" style={styles.statItem}>
+              ⚡ <strong>{hudState.stats.energy}%</strong>
             </span>
-            <span style={styles.statItem}>
-              😰 Stress: <strong>{hudState.stats.stress}%</strong>
+            <span className="bitiverse-stat" style={styles.statItem}>
+              😰 <strong>{hudState.stats.stress}%</strong>
             </span>
-            <span style={styles.statItem}>
-              📊 Level: <strong>{hudState.stats.level}</strong>
+            <span className="bitiverse-stat" style={styles.statItem}>
+              📊 <strong>{hudState.stats.level}</strong>
             </span>
-            <span style={styles.statItem}>
-              🪙 BIC: <strong>{hudState.stats.coins}</strong>
+            <span className="bitiverse-stat" style={styles.statItem}>
+              🪙 <strong>{hudState.stats.coins}</strong>
             </span>
           </div>
 
-          <div style={styles.topActions}>
-            <button style={styles.actionBtn} onClick={toggleFullscreen} title="Fullscreen (F)">
+          <div className="bitiverse-actions" style={styles.topActions}>
+            <button className="bitiverse-action-btn" style={styles.actionBtn} onClick={toggleFullscreen} title="Fullscreen (F)">
               ⛶
             </button>
             {onClose && (
-              <button style={styles.actionBtn} onClick={onClose} title="Close (Esc)">
+              <button className="bitiverse-action-btn" style={styles.actionBtn} onClick={onClose} title="Close (Esc)">
                 ✕
               </button>
             )}
@@ -550,8 +582,8 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
         </div>
 
         {/* Live feed (left side) */}
-        <div style={styles.liveFeed}>
-          <div style={styles.feedHeader}>📡 Live Feed</div>
+        <div className="bitiverse-feed" style={styles.liveFeed}>
+          <div className="bitiverse-feed-header" style={styles.feedHeader}>📡 Live Feed</div>
           <div style={styles.feedMessages}>
             {hudState.messages.map((msg, i) => (
               <div key={i} style={{
@@ -566,7 +598,7 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
         </div>
 
         {/* D-pad (bottom center, mobile) */}
-        <div style={styles.dpad}>
+        <div className="bitiverse-dpad" style={styles.dpad}>
           <div style={styles.dpadRow}>
             <div />
             <button style={styles.dpadBtn} onTouchStart={() => handleDPad('up')} onMouseDown={() => handleDPad('up')}>▲</button>
@@ -585,13 +617,43 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
         </div>
 
         {/* Controls hint */}
-        <div style={styles.controlsHint}>
-          WASD / Arrow Keys to move • F for fullscreen • ESC to close • Click minimap to teleport
+        <div className="bitiverse-controls-hint" style={styles.controlsHint}>
+          WASD / Arrow Keys to move • E to enter buildings • F for fullscreen • ESC to close • Click minimap to teleport
         </div>
+
+        {/* Enter building prompt */}
+        {stateRef.current && (() => {
+          const px = Math.floor(stateRef.current.player.x)
+          const py = Math.floor(stateRef.current.player.y)
+          const nearBuilding = BITSBURG_BUILDINGS.find(b => 
+            b.type === 'business' && px >= b.x && px < b.x + b.w && py >= b.y && py < b.y + b.h
+          )
+          if (nearBuilding) {
+            return (
+              <div style={{
+                position: 'absolute',
+                bottom: 100,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0,245,255,0.2)',
+                border: '1px solid rgba(0,245,255,0.5)',
+                borderRadius: 8,
+                padding: '8px 16px',
+                fontSize: 13,
+                color: '#00f5ff',
+                fontWeight: 600,
+                pointerEvents: 'none',
+              }}>
+                Press E to enter {nearBuilding.label || 'Building'}
+              </div>
+            )
+          }
+          return null
+        })()}
 
         {/* Guest badge */}
         {isGuest && (
-          <div style={styles.guestBadge}>
+          <div className="bitiverse-guest-badge" style={styles.guestBadge}>
             👁️ Spectator Mode
           </div>
         )}
@@ -633,7 +695,7 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    height: 44,
+    minHeight: 44,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -658,6 +720,9 @@ const styles = {
     gap: 16,
     fontSize: 12,
     color: '#ccc',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    maxWidth: '60vw',
   },
   statItem: {
     display: 'flex',
@@ -673,10 +738,12 @@ const styles = {
     border: '1px solid rgba(255,255,255,0.2)',
     borderRadius: 6,
     color: '#fff',
-    width: 32,
-    height: 32,
+    minWidth: 36,
+    minHeight: 36,
+    width: 36,
+    height: 36,
     cursor: 'pointer',
-    fontSize: 14,
+    fontSize: 16,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -727,8 +794,10 @@ const styles = {
     gap: 2,
   },
   dpadBtn: {
-    width: 44,
-    height: 44,
+    minWidth: 48,
+    minHeight: 48,
+    width: 48,
+    height: 48,
     background: 'rgba(0,245,255,0.15)',
     border: '1px solid rgba(0,245,255,0.3)',
     borderRadius: 8,
@@ -741,8 +810,10 @@ const styles = {
     userSelect: 'none',
   },
   dpadCenter: {
-    width: 44,
-    height: 44,
+    minWidth: 48,
+    minHeight: 48,
+    width: 48,
+    height: 48,
     background: 'rgba(0,0,0,0.3)',
     borderRadius: 8,
     display: 'flex',
@@ -758,7 +829,10 @@ const styles = {
     transform: 'translateX(-50%)',
     fontSize: 10,
     color: '#555',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'normal',
+    textAlign: 'center',
+    maxWidth: '90vw',
+    lineHeight: '1.4',
   },
   guestBadge: {
     position: 'absolute',
