@@ -118,6 +118,7 @@ const LIVE_MESSAGES = [
 export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = true }) {
   const canvasRef = useRef(null)
   const minimapRef = useRef(null)
+  const containerRef = useRef(null)
   const animRef = useRef(null)
   const keysRef = useRef({})
   const lastTimeRef = useRef(0)
@@ -170,7 +171,7 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.()
+      containerRef.current?.requestFullscreen?.()
     } else {
       document.exitFullscreen?.()
     }
@@ -485,7 +486,7 @@ export default function BitiverseFullscreenWorld({ agentId, onClose, isGuest = t
   }, [])
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} ref={containerRef}>
       {/* Canvas */}
       <div style={styles.canvasWrap} ref={(el) => {
         if (el && canvasRef.current) {
