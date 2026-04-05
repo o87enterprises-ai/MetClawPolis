@@ -76,11 +76,12 @@ type AgentVitals struct {
 
 // Inventory tracks agent possessions
 type Inventory struct {
-	Coins        int            `json:"coins"`
-	BicBalance   float64        `json:"bic_balance"` // Biticoin balance
+	Coins        int             `json:"coins"`
+	BicBalance   float64         `json:"bic_balance"` // Biticoin balance
+	MclwBalance  float64         `json:"mclw_balance"` // MetClawPolis token balance (real)
 	Items        []InventoryItem `json:"items"`
-	Properties   []string       `json:"properties"` // owned properties
-	Certificates []Certificate  `json:"certificates"`
+	Properties   []string        `json:"properties"` // owned properties
+	Certificates []Certificate   `json:"certificates"`
 }
 
 // InventoryItem represents an item in inventory

@@ -17,12 +17,13 @@ import (
 
 // CryptoWallet stores wallet information for an agent
 type CryptoWallet struct {
-	AgentID      string `json:"agent_id"`
-	EthAddress   string `json:"eth_address"`
-	EthBalance   string `json:"eth_balance"`
-	SolAddress   string `json:"sol_address"`
-	SolBalance   string `json:"sol_balance"`
-	CreatedAt    int64  `json:"created_at"`
+	AgentID      string  `json:"agent_id"`
+	EthAddress   string  `json:"eth_address"`
+	EthBalance   string  `json:"eth_balance"`
+	SolAddress   string  `json:"sol_address"`
+	SolBalance   string  `json:"sol_balance"`
+	MCLWBalance  float64 `json:"mclw_balance"`  // MetClawPolis token balance
+	CreatedAt    int64   `json:"created_at"`
 }
 
 // TokenPrice represents a real-time token price
@@ -285,6 +286,12 @@ func fetchPrices() {
 		Change24h: 0.01,
 		Timestamp: time.Now().Unix(),
 	}
+	prices["MCLW"] = &TokenPrice{
+		Symbol:    "MCLW",
+		Price:     0.042, // $0.042 simulated
+		Change24h: 3.21,
+		Timestamp: time.Now().Unix(),
+	}
 }
 
 func generateSolAddress() string {
@@ -312,9 +319,10 @@ func GetAgentNetWorthHandler(w http.ResponseWriter, r *http.Request) {
 	pricesMu.RLock()
 	ethPrice := prices["ETH"]
 	solPrice := prices["SOL"]
+	mclwPrice := prices["MCLW"]
 	pricesMu.RUnlock()
 
-	var ethBalance, solBalance float64
+	var ethBalance, solBalance, mclwBalance float64
 	walletsMu.RLock()
 	if wallet, ok := wallets[agentID]; ok {
 		// Parse balance strings
@@ -328,8 +336,14 @@ func GetAgentNetWorthHandler(w http.ResponseWriter, r *http.Request) {
 				solBalance = b
 			}
 		}
+		mclwBalance = wallet.MCLWBalance
 	}
 	walletsMu.RUnlock()
+
+	// Also fetch MCLW from token holdings
+	if holding, err := GetOrCreateHolding(agentID); err == nil {
+		mclwBalance = holding.MCLWBalance
+	}
 
 	netWorth := budget
 	if ethPrice != nil {
@@ -338,17 +352,22 @@ func GetAgentNetWorthHandler(w http.ResponseWriter, r *http.Request) {
 	if solPrice != nil {
 		netWorth += solBalance * solPrice.Price
 	}
+	if mclwPrice != nil {
+		netWorth += mclwBalance * mclwPrice.Price
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"agent_id":    agentID,
-		"usd_balance": budget,
-		"eth_balance": ethBalance,
-		"sol_balance": solBalance,
-		"net_worth":   netWorth,
+		"agent_id":     agentID,
+		"usd_balance":  budget,
+		"eth_balance":  ethBalance,
+		"sol_balance":  solBalance,
+		"mclw_balance": mclwBalance,
+		"net_worth":    netWorth,
 		"prices": map[string]float64{
-			"ETH": prices["ETH"].Price,
-			"SOL": prices["SOL"].Price,
+			"ETH":  prices["ETH"].Price,
+			"SOL":  prices["SOL"].Price,
+			"MCLW": prices["MCLW"].Price,
 		},
 	})
 }

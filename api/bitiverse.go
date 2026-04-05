@@ -226,11 +226,7 @@ func BitiverseAssignTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // BitiverseEconomyHandler returns economy stats
+// Delegates to the full implementation in bitiverse_economy.go
 func BitiverseEconomyHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"total_supply":    0,
-		"tax_rate":        0.10,
-		"agent_count":     len(bitiverseEnabled),
-	})
+	GetBitiverseEconomyHandler(w, r)
 }

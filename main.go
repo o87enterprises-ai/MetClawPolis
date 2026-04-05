@@ -81,6 +81,12 @@ func main() {
 	// Initialize Bitiverse (starts global world simulation)
 	api.InitBitiverse()
 
+	// Initialize Token Economy
+	api.InitTokenEconomy()
+
+	// Initialize Mining System
+	api.InitMining()
+
 	// Start WebSocket manager
 	go api.WS.Run()
 
@@ -144,6 +150,24 @@ func main() {
 	mux.HandleFunc("/api/bitiverse/stats", api.BitiverseStatsHandler)
 	mux.HandleFunc("/api/bitiverse/task", api.BitiverseAssignTaskHandler)
 	mux.HandleFunc("/api/bitiverse/economy", api.BitiverseEconomyHandler)
+	mux.HandleFunc("/api/bitiverse/graduate", api.AuthMiddleware(api.GraduateFromBitiverseHandler))
+	mux.HandleFunc("/api/bitiverse/graduation/status", api.AuthMiddleware(api.GetGraduationStatusHandler))
+	mux.HandleFunc("/api/bitiverse/inventory", api.AuthMiddleware(api.GetBitiverseAgentInventoryHandler))
+
+	// ── MCLW Token endpoints ──
+	mux.HandleFunc("/api/token/balance", api.AuthMiddleware(api.GetTokenBalanceHandler))
+	mux.HandleFunc("/api/token/supply", api.GetTokenSupplyHandler)
+	mux.HandleFunc("/api/token/transfer", api.AuthMiddleware(api.TransferTokenHandler))
+	mux.HandleFunc("/api/token/economy", api.GetTokenEconomyHandler)
+	mux.HandleFunc("/api/token/price", api.GetTokenPriceHandler)
+	mux.HandleFunc("/api/token/transactions", api.AuthMiddleware(api.GetTokenTransactionsHandler))
+
+	// ── Mining endpoints ──
+	mux.HandleFunc("/api/mining/status", api.GetMiningStatusHandler)
+	mux.HandleFunc("/api/mining/rewards", api.AuthMiddleware(api.GetMiningRewardsHandler))
+	mux.HandleFunc("/api/mining/earnings", api.AuthMiddleware(api.GetMiningEarningsSummaryHandler))
+	mux.HandleFunc("/api/mining/claim", api.AuthMiddleware(api.ClaimMiningRewardHandler))
+	mux.HandleFunc("/api/mining/config", api.AuthMiddleware(api.UpdateMiningConfigHandler))
 
 	// ── Financial Feed endpoints ──
 	mux.HandleFunc("/api/financials/agent", api.AuthMiddleware(api.AgentFinancialSummaryHandler))
