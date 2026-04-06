@@ -95,6 +95,17 @@ func main() {
 		log.Printf("WARNING: Failed to initialize Ollama config schema - %v", err)
 	}
 
+	// Initialize Service Catalog (AI, Compute, Storage with markups)
+	api.InitServiceCatalog()
+
+	// Initialize Usage Tracking Database Schema
+	if err := api.InitUsageTrackingSchema(); err != nil {
+		log.Printf("WARNING: Failed to initialize usage tracking schema - %v", err)
+	}
+
+	// Start Auto-Billing Cron Job (hourly subscription billing)
+	api.StartBillingCron()
+
 	// Start WebSocket manager
 	go api.WS.Run()
 
@@ -210,6 +221,13 @@ func main() {
 	mux.HandleFunc("/api/ollama/smart-router", api.AuthMiddleware(api.SmartRouterHandler))
 	// OpenAI-compatible endpoint
 	mux.HandleFunc("/api/ollama/v1/chat/completions", api.AuthMiddleware(api.OllamaOpenAIChatHandler))
+
+	// ── Service Marketplace endpoints (Proxy with billing) ──
+	mux.HandleFunc("/api/services/catalog", api.AuthMiddleware(api.GetServiceCatalogHandler))
+	mux.HandleFunc("/api/services/proxy", api.AuthMiddleware(api.ProxyService))
+	mux.HandleFunc("/api/services/usage", api.AuthMiddleware(api.GetAgentUsageHandler))
+	mux.HandleFunc("/api/services/api-key", api.AuthMiddleware(api.SaveAPIKeyHandler))
+	mux.HandleFunc("/api/services/revenue", api.AuthMiddleware(api.GetRevenueHandler))
 
 	// ── Beta Program endpoints (public signup, authenticated feedback) ──
 	mux.HandleFunc("/api/beta/signup", api.BetaSignupHandler)
