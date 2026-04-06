@@ -722,6 +722,219 @@ docker push <account>.dkr.ecr.us-east-1.amazonaws.com/agent-platform:latest
 
 ---
 
+## Ollama Proxy & Local AI Inference
+
+> **Full user control over AI inference configuration with local Ollama integration.**
+
+The platform includes a comprehensive Ollama proxy system that allows users to run their own local AI models with complete configuration control. This eliminates dependency on paid cloud AI APIs and gives users sovereignty over their AI inference.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              User Configuration Layer                   │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ │
+│  │ 25+      │ │ Import/  │ │ Presets  │ │ Smart      │ │
+│  │ Params   │ │ Export   │ │ (5 types)│ │ Router     │ │
+│  └──────────┘ └──────────┘ └──────────┘ └────────────┘ │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│            Ollama Proxy API (:8002 / :8080)             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ │
+│  │ Model    │ │ Chat/    │ │ OpenAI   │ │ Embeddings │ │
+│  │ Mgmt     │ │ Generate │ │ Compat   │ │            │ │
+│  └──────────┘ └──────────┘ └──────────┘ └────────────┘ │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│              Local Ollama Server (:11434)                │
+│  llama3.2 │ codellama │ qwen2.5-coder │ deepseek │ ...  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Full Configuration Control** | 25+ customizable parameters (temperature, GPU offload, sampling, etc.) |
+| **Model Management** | List, pull, show, copy, and delete models |
+| **Dual API Support** | Native Ollama API + OpenAI-compatible endpoint |
+| **Smart Router** | Auto-detects task type and applies optimal settings |
+| **Inference Presets** | 5 pre-configured presets (coding, creative, analysis, chat, summarization) |
+| **Import/Export** | Save and share configurations as JSON |
+| **Streaming** | Real-time token generation via Server-Sent Events |
+| **Batch Operations** | Update multiple user configurations at once |
+
+### Configuration Parameters
+
+Users have full control over these settings:
+
+**Model Settings:**
+- `model` — Which model to use
+- `base_url` — Ollama server URL (default: `http://localhost:11434`)
+- `max_tokens` — Maximum tokens to generate
+- `system_prompt` — Default system prompt
+
+**Sampling (Creativity):**
+- `temperature` (0.0-2.0) — Creativity vs determinism
+- `top_p` (0.0-1.0) — Nucleus sampling
+- `top_k` (0-100) — Top-k sampling
+- `typical_p` — Typical P sampling
+- `tfs_z` — Tail free sampling
+
+**Repetition Control:**
+- `repeat_penalty` (1.0-2.0) — Penalize repetition
+- `repeat_last_n` — Last N tokens to penalize
+- `frequency_penalty` (-2.0 to 2.0)
+- `presence_penalty` (-2.0 to 2.0)
+
+**GPU/Memory Optimization:**
+- `num_gpu` — Layers to offload to GPU
+- `num_thread` — CPU threads to use
+- `main_gpu` — Main GPU device ID
+- `use_mlock` — Lock model in RAM
+- `use_mmap` — Memory map model file
+
+**Advanced:**
+- `mirostat` (0/1/2) — Mirostat sampling
+- `mirostat_tau` / `mirostat_eta` — Mirostat parameters
+- `seed` — For reproducible outputs
+- `stop` — Custom stop sequences
+- `stream` — Enable streaming responses
+- `timeout` — Request timeout in seconds
+
+### Inference Presets
+
+| Preset | Temperature | Max Tokens | Best For |
+|--------|-------------|------------|----------|
+| **Coding** | 0.2 | 8192 | Code generation, debugging |
+| **Creative** | 0.9 | 4096 | Writing, brainstorming |
+| **Analysis** | 0.1 | 4096 | Data analysis, reasoning |
+| **Chat** | 0.7 | 4096 | General conversation |
+| **Summarization** | 0.3 | 2048 | Text summarization |
+
+### API Endpoints
+
+**Configuration Management:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/ollama/config` | Get current configuration |
+| `PUT` | `/api/ollama/config/update` | Update configuration |
+| `POST` | `/api/ollama/config/reset` | Reset to defaults |
+| `GET` | `/api/ollama/config/export` | Export config as JSON |
+| `POST` | `/api/ollama/config/import` | Import configuration |
+| `POST` | `/api/ollama/config/batch` | Batch update multiple users |
+
+**Model Management:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/ollama/models` | List available models |
+| `GET` | `/api/ollama/models/running` | List models in memory |
+| `GET` | `/api/ollama/models/show?model=name` | Show model details |
+| `POST` | `/api/ollama/models/pull` | Download new model |
+| `DELETE` | `/api/ollama/models/delete?model=name` | Delete model |
+| `POST` | `/api/ollama/models/copy` | Copy model to new name |
+
+**Inference:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/ollama/chat` | Chat completion (Ollama native) |
+| `POST` | `/api/ollama/generate` | Text generation |
+| `POST` | `/api/ollama/embeddings` | Generate embeddings |
+| `POST` | `/api/ollama/v1/chat/completions` | OpenAI-compatible endpoint |
+
+**Smart Routing & Presets:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/ollama/presets` | List inference presets |
+| `POST` | `/api/ollama/presets/apply` | Apply preset to config |
+| `POST` | `/api/ollama/smart-router` | Auto-optimize for task type |
+
+**Health & Status:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/ollama/health` | Check Ollama server health |
+| `GET` | `/api/ollama/status` | Comprehensive proxy status |
+
+### Quick Start
+
+```bash
+# Start Ollama server
+ollama serve
+
+# Pull a model
+ollama pull qwen2.5-coder
+
+# Start the platform
+./metclawpolis
+
+# Update your config
+curl -X PUT http://localhost:8080/api/ollama/config/update \
+  -H "X-Agent-ID: your_agent" \
+  -H "X-Signature: your_signature" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5-coder",
+    "temperature": 0.2,
+    "max_tokens": 8192,
+    "num_gpu": 35
+  }'
+
+# Chat
+curl -X POST http://localhost:8080/api/ollama/chat \
+  -H "X-Agent-ID: your_agent" \
+  -H "X-Signature: your_signature" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5-coder",
+    "messages": [{"role": "user", "content": "Write a sorting function"}]
+  }'
+```
+
+### OpenAI-Compatible Endpoint
+
+Drop-in replacement for OpenAI API calls:
+
+```bash
+curl -X POST http://localhost:8080/api/ollama/v1/chat/completions \
+  -H "X-Agent-ID: your_agent" \
+  -H "X-Signature: your_signature" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5-coder",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "temperature": 0.7,
+    "max_tokens": 100
+  }'
+```
+
+### Recommended Free Models
+
+| Model | Size | Best For | GPU Required |
+|-------|------|----------|--------------|
+| `deepseek-r1:1.5b` | 1.1 GB | Fast responses | No (CPU OK) |
+| `qwen2.5-coder:latest` | 4.7 GB | Code generation | Optional |
+| `llama3.2:latest` | 3.8 GB | General purpose | Optional |
+| `gemma:latest` | 2.5 GB | Lightweight | No (CPU OK) |
+| `phi3:mini` | 2.2 GB | Fast, efficient | No (CPU OK) |
+
+### Benefits
+
+✅ **Zero API costs** — Run unlimited inferences locally  
+✅ **No rate limits** — Your hardware, your rules  
+✅ **Privacy** — Data never leaves your machine  
+✅ **Full control** — Customize every parameter  
+✅ **Offline capable** — Works without internet  
+✅ **Open source models** — Access to thousands of models  
+
+---
+
 ## Third-Party Fees
 
 | Service | Purpose | Estimated Cost |

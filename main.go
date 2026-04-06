@@ -87,6 +87,14 @@ func main() {
 	// Initialize Mining System
 	api.InitMining()
 
+	// Initialize Ollama Config
+	api.InitOllamaConfig()
+
+	// Initialize Ollama Config Database Schema
+	if err := api.InitOllamaConfigSchema(); err != nil {
+		log.Printf("WARNING: Failed to initialize Ollama config schema - %v", err)
+	}
+
 	// Start WebSocket manager
 	go api.WS.Run()
 
@@ -178,6 +186,30 @@ func main() {
 	// ── Cloud Provider endpoints ──
 	mux.HandleFunc("/api/cloud/providers", api.AuthMiddleware(api.GetCloudProvidersHandler))
 	mux.HandleFunc("/api/cloud/purchase", api.AuthMiddleware(api.CreateCloudPurchaseHandler))
+
+	// ── Ollama Proxy endpoints ──
+	mux.HandleFunc("/api/ollama/config", api.AuthMiddleware(api.GetOllamaConfigHandler))
+	mux.HandleFunc("/api/ollama/config/update", api.AuthMiddleware(api.UpdateOllamaConfigHandler))
+	mux.HandleFunc("/api/ollama/config/reset", api.AuthMiddleware(api.ResetOllamaConfigHandler))
+	mux.HandleFunc("/api/ollama/config/export", api.AuthMiddleware(api.ExportOllamaConfigHandler))
+	mux.HandleFunc("/api/ollama/config/import", api.AuthMiddleware(api.ImportOllamaConfigHandler))
+	mux.HandleFunc("/api/ollama/config/batch", api.AuthMiddleware(api.BatchOllamaConfigHandler))
+	mux.HandleFunc("/api/ollama/models", api.AuthMiddleware(api.GetOllamaModelsHandler))
+	mux.HandleFunc("/api/ollama/models/running", api.AuthMiddleware(api.GetOllamaRunningModelsHandler))
+	mux.HandleFunc("/api/ollama/models/show", api.AuthMiddleware(api.ShowOllamaModelHandler))
+	mux.HandleFunc("/api/ollama/models/pull", api.AuthMiddleware(api.PullOllamaModelHandler))
+	mux.HandleFunc("/api/ollama/models/delete", api.AuthMiddleware(api.DeleteOllamaModelHandler))
+	mux.HandleFunc("/api/ollama/models/copy", api.AuthMiddleware(api.CopyOllamaModelHandler))
+	mux.HandleFunc("/api/ollama/chat", api.AuthMiddleware(api.OllamaChatHandler))
+	mux.HandleFunc("/api/ollama/generate", api.AuthMiddleware(api.OllamaGenerateHandler))
+	mux.HandleFunc("/api/ollama/embeddings", api.AuthMiddleware(api.OllamaEmbeddingsHandler))
+	mux.HandleFunc("/api/ollama/health", api.AuthMiddleware(api.OllamaHealthHandler))
+	mux.HandleFunc("/api/ollama/status", api.AuthMiddleware(api.GetOllamaProxyStatusHandler))
+	mux.HandleFunc("/api/ollama/presets", api.AuthMiddleware(api.GetInferencePresetsHandler))
+	mux.HandleFunc("/api/ollama/presets/apply", api.AuthMiddleware(api.ApplyPresetHandler))
+	mux.HandleFunc("/api/ollama/smart-router", api.AuthMiddleware(api.SmartRouterHandler))
+	// OpenAI-compatible endpoint
+	mux.HandleFunc("/api/ollama/v1/chat/completions", api.AuthMiddleware(api.OllamaOpenAIChatHandler))
 
 	// ── Beta Program endpoints (public signup, authenticated feedback) ──
 	mux.HandleFunc("/api/beta/signup", api.BetaSignupHandler)
