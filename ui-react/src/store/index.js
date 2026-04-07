@@ -45,6 +45,9 @@ export const useStore = create((set, get) => ({
   },
 
   addTransaction: (tx) => {
+    const { transactions } = get()
+    set({ transactions: [{ ...tx, time: Date.now() }, ...transactions].slice(0, 50) })
+  },
 
   // Projects
   projects: [],
