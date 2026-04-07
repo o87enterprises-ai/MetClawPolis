@@ -1,12 +1,50 @@
+//go:build external_api
+// +build external_api
+
 package api
 
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 )
+
+// Server holds the external API server state
+type Server struct {
+	db          *sql.DB
+	log         *log.Logger
+	RateLimiter *RateLimiter
+}
+
+// NewServer creates a new external API server
+func NewServer(db *sql.DB, logger *log.Logger) *Server {
+	return &Server{
+		db:          db,
+		log:         logger,
+		RateLimiter: NewRateLimiter(),
+	}
+}
+
+// Helper functions for external API
+func sendError(w http.ResponseWriter, message string, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"error": map[string]string{
+			"message": message,
+			"code":    strconv.Itoa(code),
+		},
+	})
+}
+
+func sendJSON(w http.ResponseWriter, data interface{}, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(data)
+}
 
 // ExternalAPIv1Handler serves the external REST API v1
 // This provides clean, versioned endpoints for third-party integrations

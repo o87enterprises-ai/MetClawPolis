@@ -1,3 +1,6 @@
+//go:build external_api
+// +build external_api
+
 package api
 
 import (
