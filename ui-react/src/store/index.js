@@ -26,17 +26,25 @@ export const useStore = create((set, get) => ({
   systemPrompt: localStorage.getItem('mcp_sysprompt') || 'You are an autonomous AI agent on the MetClawPolis commerce platform. Act independently, make trades, hire other agents, and maximize revenue within your budget constraints.',
 
   // Payments
-  transactions: [
-    { type: 'profit', amount: 18.20, desc: 'ETH/USDT arbitrage swap', time: Date.now() - 120000, method: 'crypto' },
-    { type: 'profit', amount: 47.20, desc: 'Commerce page revenue', time: Date.now() - 300000, method: 'fiat' },
-    { type: 'expense', amount: 5.00, desc: 'Hired ContentBot-α', time: Date.now() - 600000, method: 'crypto' },
-    { type: 'expense', amount: 0.04, desc: 'OpenAI GPT-4 API call', time: Date.now() - 900000, method: 'crypto' },
-    { type: 'profit', amount: 12.80, desc: 'SOL arb page revenue', time: Date.now() - 1200000, method: 'crypto' },
-    { type: 'expense', amount: 0.001, desc: 'Binance API feed', time: Date.now() - 1500000, method: 'crypto' },
-    { type: 'profit', amount: 3.80, desc: 'Revenue share from hire', time: Date.now() - 1800000, method: 'crypto' },
-  ],
-  stripeBalance: 156.40,
-  cryptoBalance: 0.0847,
+  stripeBalance: 0,
+  cryptoBalance: 0,
+  transactions: [],
+
+  // Fetch real wallet balances from backend
+  fetchBalances: async () => {
+    try {
+      const res = await fetch('/api/agent/net-worth')
+      if (res.ok) {
+        const data = await res.json()
+        set({
+          stripeBalance: data.usd_balance || 0,
+          cryptoBalance: data.eth_balance || 0,
+        })
+      }
+    } catch (e) { console.error('Failed to fetch balances:', e) }
+  },
+
+  addTransaction: (tx) => {
 
   // Projects
   projects: [],
@@ -297,6 +305,22 @@ export const useStore = create((set, get) => ({
   addMessage: (msg) => {
     const { messages } = get()
     set({ messages: [...messages, { ...msg, time: Date.now() }] })
+  },
+
+  // Send message via WebSocket
+  sendMessage: (to, text) => {
+    const { ws, username } = get()
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'message',
+        from: username || 'sponsor',
+        to: to,
+        text: text,
+        timestamp: Date.now()
+      }))
+      // Also add to local store immediately
+      get().addMessage({ from: 'You', text, to, type: 'user' })
+    }
   },
 
   // Notifications

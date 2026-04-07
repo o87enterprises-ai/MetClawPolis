@@ -47,13 +47,30 @@ export default function BitiverseFullscreenModal({ agentId, onClose }) {
   // Run a turn
   const runTurn = useCallback(async (task) => {
     try {
+      // Get signature from backend
+      let signature = ''
+      try {
+        const signRes = await fetch('/api/auth/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent_id: agentId, message: `bitiverse_turn_${Date.now()}` })
+        })
+        if (signRes.ok) {
+          const signData = await signRes.json()
+          signature = signData.signature
+        }
+      } catch (e) {
+        console.warn('Signing unavailable, using demo signature')
+        signature = 'demo-signature'
+      }
+
       const body = task ? { task: { description: task, reward: 5, difficulty: 1 } } : {}
       const res = await fetch(`/api/bitiverse/turn`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Agent-ID': agentId,
-          'X-Signature': 'demo-signature', // TODO: Replace with real signature
+          'X-Signature': signature,
         },
         body: JSON.stringify(body),
       })
@@ -73,12 +90,29 @@ export default function BitiverseFullscreenModal({ agentId, onClose }) {
   const assignTask = async () => {
     if (!taskInput.trim()) return
     try {
+      // Get signature
+      let signature = ''
+      try {
+        const signRes = await fetch('/api/auth/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agent_id: agentId, message: `bitiverse_task_${Date.now()}` })
+        })
+        if (signRes.ok) {
+          const signData = await signRes.json()
+          signature = signData.signature
+        }
+      } catch (e) {
+        console.warn('Signing unavailable, using demo signature')
+        signature = 'demo-signature'
+      }
+
       const res = await fetch('/api/bitiverse/task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Agent-ID': agentId,
-          'X-Signature': 'demo-signature',
+          'X-Signature': signature,
         },
         body: JSON.stringify({ description: taskInput, reward: 5, difficulty: 1 }),
       })

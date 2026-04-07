@@ -118,6 +118,7 @@ func main() {
 	mux.HandleFunc("/api/auth/verify", api.VerifyTokenHandler)
 	mux.HandleFunc("/api/auth/validate", api.ValidateSessionHandler)
 	mux.HandleFunc("/api/auth/logout", api.LogoutHandler)
+	mux.HandleFunc("/api/auth/sign", api.SignHandler)
 
 	// ── Public endpoints ──
 	mux.HandleFunc("/health", healthHandler)

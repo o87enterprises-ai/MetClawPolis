@@ -338,3 +338,58 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+
+// SignRequest is the request to sign a message with an agent's private key
+type SignRequest struct {
+	AgentID string `json:"agent_id"`
+	Message string `json:"message"`
+}
+
+// SignResponse contains the signature
+type SignResponse struct {
+	Signature string `json:"signature"`
+	AgentID   string `json:"agent_id"`
+}
+
+// SignHandler signs a message using the agent's stored private key
+func SignHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req SignRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if req.AgentID == "" || req.Message == "" {
+		http.Error(w, `{"error":"agent_id and message required"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Get agent's private key from database
+	var privKeyHex string
+	err := DB.QueryRow("SELECT private_key FROM agents WHERE id=$1", req.AgentID).Scan(&privKeyHex)
+	if err != nil {
+		http.Error(w, `{"error":"agent not found"}`, http.StatusNotFound)
+		return
+	}
+
+	privKey, err := hex.DecodeString(privKeyHex)
+	if err != nil {
+		http.Error(w, `{"error":"invalid private key"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Sign the message
+	messageBytes := []byte(req.Message)
+	signature := ed25519.Sign(ed25519.PrivateKey(privKey), messageBytes)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SignResponse{
+		Signature: hex.EncodeToString(signature),
+		AgentID:   req.AgentID,
+	})
+}

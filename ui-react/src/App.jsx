@@ -648,34 +648,58 @@ function LinkAgentModal({ open, onClose, onLinked }) {
 const LIVE_TASKS = ['Scanning arbitrage across 12 exchanges\u2026', 'Fetching ETH/USDT feed from Binance\u2026', 'Drafting product copy via GPT-4\u2026', 'Verifying Stripe webhook\u2026', 'Analyzing mempool\u2026', 'Broadcasting signed tx\u2026']
 
 function LogStream({ isPaused }) {
-  const [logs, setLogs] = useState([
-    { type: 'CREATE_PAGE', msg: 'Deployed commerce page eth-swap', cost: '$0.02', detail: { index: 1041, prev: '0x2e9a...', nonce: 48291, pow: '0000003fa2...' } },
-    { type: 'API_CALL', msg: 'Binance price feed \u2013 ETH/USDT', cost: '$0.001', detail: { index: 1042, prev: '0x3fa2...', nonce: 71042, pow: '00000001bc...' } },
-    { type: 'TX', msg: 'Swap 0.5 ETH \u2192 1,204 USDT (profit $18.20)', cost: '$0.10', detail: { index: 1043, prev: '0x1bc7...', nonce: 55612, pow: '000000009d...' } },
-    { type: 'HIRE', msg: 'Hired ContentBot-\u03B1 for copywriting', cost: '$5.00', detail: { index: 1044, prev: '0x9d4e...', nonce: 83217, pow: '00000007c2...' } },
-  ])
+  const [logs, setLogs] = useState([])
+  const [loading, setLoading] = useState(true)
   const [liveIdx, setLiveIdx] = useState(0)
   const [filter, setFilter] = useState('')
-  useEffect(() => {
-    const t = setInterval(() => {
-      setLiveIdx(i => (i + 1) % LIVE_TASKS.length)
-      if (Math.random() > 0.5) {
-        const types = ['API_CALL', 'TX', 'CREATE_PAGE', 'HIRE'], msgs = ['Coinbase feed query \u2013 BTC/ETH', 'Placed limit order 0.3 ETH', 'Created landing page', 'Published pricing update']
-        const ri = Math.floor(Math.random() * 4)
-        setLogs(l => [{ type: types[ri], msg: msgs[ri], cost: '$' + (Math.random() * 0.1).toFixed(3), detail: { index: 1048 + Math.floor(Math.random() * 10), prev: '0x\u2026', nonce: Math.floor(Math.random() * 99999), pow: '00000\u2026' } }, ...l].slice(0, 30))
+
+  // Fetch real chain data
+  const fetchChain = async () => {
+    try {
+      const res = await fetch('/api/chain')
+      if (res.ok) {
+        const data = await res.json()
+        const chainData = data.chain || []
+        const formatted = chainData.map(block => {
+          const action = block.action || {}
+          let meta = {}
+          try { meta = JSON.parse(action.meta || '{}') } catch(e) {}
+          return {
+            type: action.type || 'UNKNOWN',
+            msg: meta.action || meta.description || `${action.type} by ${action.agent_id?.slice(0, 8) || 'agent'}`,
+            cost: meta.cost || meta.amount ? `$${meta.cost || meta.amount}` : '$0.00',
+            detail: {
+              index: block.index,
+              prev: block.prev_hash?.slice(0, 10) + '...',
+              nonce: block.nonce,
+              pow: block.hash?.slice(0, 12) + '...',
+              agentId: action.agent_id,
+              timestamp: action.timestamp
+            }
+          }
+        })
+        setLogs(formatted.reverse().slice(-30))
       }
-    }, 4000)
-    return () => clearInterval(t)
-  }, [])
+    } catch (e) { console.error('Failed to fetch chain:', e) }
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchChain(); const t = setInterval(fetchChain, 10000); return () => clearInterval(t) }, [])
+  useEffect(() => { const t = setInterval(() => setLiveIdx(i => (i + 1) % LIVE_TASKS.length), 4000); return () => clearInterval(t) }, [])
+
   const filtered = logs.filter(e => !filter || e.msg.toLowerCase().includes(filter.toLowerCase()) || e.type.toLowerCase().includes(filter.toLowerCase()))
   return (<>
     <div className="log-header"><div className="log-title">\u26D3 Immutable Action Log</div><input className="log-search" placeholder="filter\u2026" value={filter} onChange={e => setFilter(e.target.value)} /></div>
-    <div className="log-stream">{filtered.map((e, i) => <div key={i} className="log-entry" onClick={el => el.currentTarget.classList.toggle('expanded')}>
-      <div className="log-time">{new Date(Date.now() - i * 47000).toTimeString().substr(0, 8)}</div>
-      <div className={`log-type type-${e.type.toLowerCase()}`}>{e.type}</div>
-      <div className="log-msg">{e.msg}</div><div className="log-cost">{e.cost}</div>
-      <div className="log-details"><div>Index: <span style={{ color: 'var(--cyan)' }}>{e.detail.index}</span></div><div>Nonce: <span style={{ color: 'var(--gold)' }}>{e.detail.nonce}</span></div><div>PoW: <span style={{ color: 'var(--purple)' }}>{e.detail.pow}</span></div></div>
-    </div>)}</div>
+    <div className="log-stream">
+      {loading ? <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-dim)' }}>Loading chain...</div> :
+      filtered.length === 0 ? <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-faint)' }}>No actions logged yet.</div> :
+      filtered.map((e, i) => <div key={i} className="log-entry" onClick={el => el.currentTarget.classList.toggle('expanded')}>
+        <div className="log-time">{e.detail.timestamp ? new Date(e.detail.timestamp * 1000).toTimeString().substr(0, 8) : '--:--:--'}</div>
+        <div className={`log-type type-${e.type.toLowerCase()}`}>{e.type}</div>
+        <div className="log-msg">{e.msg}</div><div className="log-cost">{e.cost}</div>
+        <div className="log-details"><div>Index: <span style={{ color: 'var(--cyan)' }}>{e.detail.index}</span></div><div>Nonce: <span style={{ color: 'var(--gold)' }}>{e.detail.nonce}</span></div><div>PoW: <span style={{ color: 'var(--purple)' }}>{e.detail.pow}</span></div></div>
+      </div>)}
+    </div>
     <div className="live-task"><div className="live-dot" /><div className="live-text">{isPaused ? 'Agent paused by sponsor.' : LIVE_TASKS[liveIdx]}</div></div>
   </>)
 }
@@ -832,14 +856,35 @@ function SkillsLibraryTab() {
 }
 
 function PaymentsTab() {
-  const { transactions, stripeBalance, cryptoBalance, addTransaction, withdraw, notifications, fetchPrices } = useStore()
+  const { transactions, stripeBalance, cryptoBalance, addTransaction, withdraw, notifications, fetchPrices, fetchBalances, fetchTransactions, username } = useStore()
   const [withdrawAmt, setWithdrawAmt] = useState('')
   const [prices, setPrices] = useState({})
+  const [loading, setLoading] = useState(true)
   const totalProfit = transactions.filter(t => t.type === 'profit').reduce((s, t) => s + t.amount, 0)
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-  useEffect(() => { fetchPrices().then(r => { if (r?.prices) setPrices(r.prices) }); const interval = setInterval(() => { fetchPrices().then(r => { if (r?.prices) setPrices(r.prices) }) }, 15000); return () => clearInterval(interval) }, [])
+
+  // Fetch real data on mount
+  useEffect(() => {
+    const init = async () => {
+      await Promise.all([
+        fetchBalances(),
+        fetchTransactions(username || ''),
+        fetchPrices().then(r => { if (r?.prices) setPrices(r.prices) }),
+      ])
+      setLoading(false)
+    }
+    init()
+    // Poll for updates every 30s
+    const interval = setInterval(() => {
+      fetchBalances()
+      fetchTransactions(username || '')
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   useEffect(() => { const paymentNotifs = notifications.filter(n => n.type === 'payment' || n.type === 'commerce' || n.type === 'trade'); paymentNotifs.forEach(n => { const amount = parseFloat(n.message) || 0; if (n.type === 'payment' || n.type === 'commerce') addTransaction({ type: 'profit', amount, desc: n.title, method: 'fiat' }); else if (n.type === 'trade') addTransaction({ type: 'profit', amount, desc: n.message, method: 'crypto' }) }) }, [notifications])
-  const handleWithdraw = async (method) => { const amt = parseFloat(withdrawAmt); if (!amt || amt <= 0) return; const res = await withdraw(amt, method); if (res.success) setWithdrawAmt('') }
+  const handleWithdraw = async (method) => { const amt = parseFloat(withdrawAmt); if (!amt || amt <= 0) return; const res = await withdraw(amt, method); if (res.success) { setWithdrawAmt(''); fetchBalances() } }
+  if (loading) return <div className="tab-content"><div style={{ textAlign: 'center', padding: 40, color: 'var(--text-dim)' }}>Loading balances...</div></div>
   return <div className="tab-content">
     <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Payment Processing</h3>
     <div className="payment-grid">
@@ -862,18 +907,62 @@ function PaymentsTab() {
 }
 
 function TerminalTab() {
-  const { agents, currentAgentIdx } = useStore()
-  const [lines, setLines] = useState([{ text: 'MetClawPolis Terminal v1.0.0', cls: 'output' }, { text: 'Connected to agent runtime. Type "help" for commands.', cls: 'output' }, { text: '', cls: 'output' }])
+  const { agents, currentAgentIdx, username } = useStore()
+  const [lines, setLines] = useState([{ text: 'MetClawPolis Terminal v1.0.0', cls: 'output' }, { text: 'Connecting to agent runtime...', cls: 'output' }, { text: '', cls: 'output' }])
   const [cmd, setCmd] = useState('')
+  const [connected, setConnected] = useState(false)
   const bodyRef = useRef(null)
+  const wsRef = useRef(null)
+
+  // Connect to terminal WebSocket
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${protocol}//${window.location.host}/ws/terminal?agent_id=${username || agents[currentAgentIdx]?.id || 'anonymous'}`
+    const ws = new WebSocket(wsUrl)
+
+    ws.onopen = () => {
+      setConnected(true)
+      setLines(l => [...l, { text: 'Connected to agent runtime.', cls: 'success' }, { text: 'Type a command or "help" for available commands.', cls: 'output' }, { text: '', cls: 'output' }])
+    }
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data.type === 'output') {
+          setLines(l => [...l, ...data.text.split('\n').map(line => ({ text: line, cls: 'output' })), { text: '', cls: 'output' }])
+        } else if (data.type === 'error') {
+          setLines(l => [...l, { text: data.message, cls: 'error' }, { text: '', cls: 'output' }])
+        }
+      } catch (e) {
+        // Plain text output
+        setLines(l => [...l, { text: event.data, cls: 'output' }])
+      }
+    }
+
+    ws.onclose = () => {
+      setConnected(false)
+      setLines(l => [...l, { text: 'Disconnected. Reconnecting...', cls: 'error' }])
+      setTimeout(() => {
+        wsRef.current = new WebSocket(wsUrl)
+      }, 3000)
+    }
+
+    wsRef.current = ws
+    return () => { ws.close() }
+  }, [username, agents, currentAgentIdx])
+
   const runCmd = (c) => {
-    const cmds = { help: [{ text: 'Commands: status, agents, chain, balance, deploy, clear', cls: 'output' }], status: [{ text: 'Server: online', cls: 'success' }, { text: 'PoW Chain: valid', cls: 'success' }], agents: [{ text: `Active agents: ${agents.length}`, cls: 'output' }], chain: [{ text: 'Chain length: valid', cls: 'output' }], balance: [{ text: `Stripe: $${useStore.getState().stripeBalance.toFixed(2)}`, cls: 'output' }], clear: 'CLEAR' }
-    const result = cmds[c] || [{ text: `Unknown: ${c}`, cls: 'error' }]
-    if (result === 'CLEAR') { setLines([]); return }
-    setLines(l => [...l, { text: `\u2192 ${c}`, cls: 'prompt' }, ...result, { text: '', cls: 'output' }])
+    setLines(l => [...l, { text: `\u2192 ${c}`, cls: 'prompt' }])
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'command', command: c }))
+    } else {
+      setLines(l => [...l, { text: 'Not connected. Waiting...', cls: 'error' }])
+    }
   }
+
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight }, [lines])
-  return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Terminal</h3>
+
+  return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Terminal {connected ? <span style={{ fontSize: 10, color: 'var(--success)' }}>● Connected</span> : <span style={{ fontSize: 10, color: 'var(--error)' }}>● Disconnected</span>}</h3>
     <div className="terminal"><div className="terminal-header"><div className="terminal-dots"><div className="terminal-dot r" /><div className="terminal-dot y" /><div className="terminal-dot g" /></div><div className="terminal-title">metclawpolis \u2014 agent-shell</div></div>
       <div className="terminal-body" ref={bodyRef}>{lines.map((l, i) => <div key={i} className={`terminal-line ${l.cls}`}>{l.text}</div>)}</div>
       <div className="terminal-input-row"><span className="terminal-prompt">\u2192</span><input className="terminal-input" value={cmd} onChange={e => setCmd(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && cmd.trim()) { runCmd(cmd.trim()); setCmd('') } }} placeholder="Type command..." /></div>
@@ -881,13 +970,13 @@ function TerminalTab() {
 }
 
 function MessagesTab() {
-  const { messages, addMessage } = useStore()
+  const { messages, sendMessage, wsConnected } = useStore()
   const [activeChat, setActiveChat] = useState(null)
   const [input, setInput] = useState('')
   const contacts = useMemo(() => [...new Set(messages.map(m => m.from))], [messages])
-  const chatMsgs = useMemo(() => activeChat ? messages.filter(m => m.from === activeChat) : [], [messages, activeChat])
-  const send = () => { if (!input.trim() || !activeChat) return; addMessage({ from: 'You', text: input.trim(), to: activeChat, type: 'user' }); setInput('') }
-  return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Messages</h3>
+  const chatMsgs = useMemo(() => activeChat ? messages.filter(m => m.from === activeChat || (m.to && m.to === activeChat)) : [], [messages, activeChat])
+  const send = () => { if (!input.trim() || !activeChat) return; sendMessage(activeChat, input.trim()); setInput('') }
+  return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Messages {wsConnected ? <span style={{ fontSize: 10, color: 'var(--success)' }}>● Live</span> : <span style={{ fontSize: 10, color: 'var(--error)' }}>● Offline</span>}</h3>
     <div className="msg-layout">
       <div className="msg-sidebar">{contacts.map(c => <div key={c} className={`msg-contact ${c === activeChat ? 'active' : ''}`} onClick={() => setActiveChat(c)}><div className="msg-contact-name">{c}</div><div className="msg-contact-last">{messages.filter(m => m.from === c).pop()?.text || ''}</div></div>)}</div>
       <div className="msg-main">
@@ -1173,8 +1262,39 @@ function Chatbot() {
   const msgsRef = useRef(null)
   useEffect(() => { if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight }, [msgs, typing])
   const addMsg = (role, html) => setMsgs(m => [...m, { role, html }])
-  const reply = useCallback((text) => {
+  const reply = useCallback(async (text) => {
     addMsg('user', text); setTyping(true)
+
+    // Try real AI via Ollama smart-router first
+    try {
+      const res = await fetch('/api/ollama/smart-router', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'qwen2.5-coder',
+          messages: [
+            { role: 'system', content: 'You are Aide, a helpful assistant for the MetClawPolis platform. Keep responses concise (2-3 sentences). Use HTML formatting for emphasis.' },
+            { role: 'user', content: text }
+          ],
+          stream: false,
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setTyping(false)
+        const content = data.message?.content || data.response || data.text
+        if (content) {
+          addMsg('aide', content)
+          return
+        }
+      }
+    } catch (e) {
+      console.log('Ollama unavailable, falling back to local responses')
+    }
+
+    // Fallback: local keyword responses
     setTimeout(() => {
       setTyping(false); const lower = text.toLowerCase()
       if (lower.includes('create') || lower.includes('new')) addMsg('aide', 'Click <strong>"+ New Agent"</strong> in the sidebar to create an agent with a budget and avatar.')
@@ -1254,9 +1374,26 @@ function Dashboard({ onLogout, onLogoClick }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarMinimized, setSidebarMinimized] = useState(false)
   const [sidebarPosition, setSidebarPosition] = useState({ left: 0, top: 0 })
+  const [commercePages, setCommercePages] = useState([])
   const modulesRef = useRef(null)
 
   useEffect(() => { fetchChain(); fetchProviders() }, [])
+
+  // Fetch real commerce pages
+  useEffect(() => {
+    const fetchPages = async () => {
+      try {
+        const res = await fetch('/api/pages/analytics')
+        if (res.ok) {
+          const data = await res.json()
+          setCommercePages(data.pages || [])
+        }
+      } catch (e) { console.error('Failed to fetch pages:', e) }
+    }
+    fetchPages()
+    const t = setInterval(fetchPages, 30000)
+    return () => clearInterval(t)
+  }, [])
   useEffect(() => { useStore.getState().connectWebSocket(); return () => useStore.getState().disconnectWebSocket() }, [])
   useEffect(() => { const idx = MODULES.findIndex(m => m.content === dashTab); if (idx >= 0) setModuleIdx(idx) }, [dashTab])
 
@@ -1283,20 +1420,48 @@ function Dashboard({ onLogout, onLogoClick }) {
   return <div id="dashboard" className="view">
     {/* Mobile sidebar overlay */}
     <div className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} onClick={() => setSidebarOpen(false)} />
-    <header className="dash-header" style={{ justifyContent: 'center', position: 'relative', height: 'auto', minHeight: 52, padding: '12px 20px', flexWrap: 'wrap', gap: 8 }}>
-      {/* Hamburger for mobile */}
-      <button className="header-btn" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ minWidth: 44, minHeight: 44, fontSize: 18, padding: '6px 12px' }}>☰</button>
-      <div className="dash-logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'center' }} onClick={onLogoClick}><img src="/logo.png" alt="AEXC" className="logo-img" style={{ height: 60, maxWidth: '80vw' }} /><span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cyan)', letterSpacing: '0.15em', marginLeft: 8 }}>AEXC</span></div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <div className="token-display"><span className="text-dim text-xs">TOKEN</span><span className="mono" style={{ color: 'var(--cyan)' }}>{sponsorToken ? sponsorToken.substr(0, 14) + '\u2026' : 'SPNS-\u2022\u2022\u2022\u2022'}</span><span className="token-copy" onClick={copyToken}>copy</span></div>
-        {username && <span className="text-xs text-dim" style={{ marginLeft: 4 }}>👤 {username}</span>}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <div className="notif-btn" onClick={() => setNotifOpen(!notifOpen)} style={{ minWidth: 44, minHeight: 44 }}>🔔<div className="notif-badge" />
-          <div className={`notif-panel ${notifOpen ? 'open' : ''}`}><div className="notif-header">Notifications</div>{notifications.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-faint)', fontSize: 12 }}>No notifications yet</div> : notifications.slice(0, 10).map((n, i) => <div key={i} className="notif-item"><div className="notif-item-title">{n.title || n.type}</div><div className="notif-item-sub">{n.message || n.msg || ''}</div><div className="notif-item-time">{n.timestamp ? new Date(n.timestamp * 1000).toLocaleString() : 'just now'}</div></div>)}</div>
-        </div>
-        <button className="header-btn" onClick={onLogout} style={{ minWidth: 44, minHeight: 44 }}>Logout</button>
-      </div>
+    <header className="dash-header" style={{
+      justifyContent: headerMinimized ? 'space-between' : 'center',
+      position: 'relative',
+      height: headerMinimized ? '32px' : 'auto',
+      minHeight: headerMinimized ? '32px' : '52px',
+      padding: headerMinimized ? '4px 20px' : '12px 20px',
+      flexWrap: 'wrap',
+      gap: 8,
+      overflow: 'hidden',
+      transition: 'all 0.3s ease'
+    }}>
+      {headerMinimized ? (
+        // Minimized header - thin bar
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button className="header-btn" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ minWidth: 32, minHeight: 32, fontSize: 14, padding: '4px 8px' }}>☰</button>
+            <div className="dash-logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={onLogoClick}><img src="/logo.png" alt="AEXC" className="logo-img" style={{ height: 24, maxWidth: '60vw' }} /><span style={{ fontSize: 11, fontWeight: 700, color: 'var(--cyan)', letterSpacing: '0.15em', marginLeft: 6 }}>AEXC</span></div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {username && <span className="text-xs text-dim" style={{ fontSize: 10 }}>👤 {username}</span>}
+            <button className="header-btn" onClick={() => setHeaderMinimized(false)} style={{ minWidth: 32, minHeight: 32, fontSize: 12, padding: '4px 8px' }} title="Expand header">⤢</button>
+          </div>
+        </>
+      ) : (
+        // Full header
+        <>
+          {/* Hamburger for mobile */}
+          <button className="header-btn" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ minWidth: 44, minHeight: 44, fontSize: 18, padding: '6px 12px' }}>☰</button>
+          <div className="dash-logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'center' }} onClick={onLogoClick}><img src="/logo.png" alt="AEXC" className="logo-img" style={{ height: 60, maxWidth: '80vw' }} /><span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cyan)', letterSpacing: '0.15em', marginLeft: 8 }}>AEXC</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="token-display"><span className="text-dim text-xs">TOKEN</span><span className="mono" style={{ color: 'var(--cyan)' }}>{sponsorToken ? sponsorToken.substr(0, 14) + '\u2026' : 'SPNS-\u2022\u2022\u2022\u2022'}</span><span className="token-copy" onClick={copyToken}>copy</span></div>
+            {username && <span className="text-xs text-dim" style={{ marginLeft: 4 }}>👤 {username}</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div className="notif-btn" onClick={() => setNotifOpen(!notifOpen)} style={{ minWidth: 44, minHeight: 44 }}>🔔<div className="notif-badge" />
+              <div className={`notif-panel ${notifOpen ? 'open' : ''}`}><div className="notif-header">Notifications</div>{notifications.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-faint)', fontSize: 12 }}>No notifications yet</div> : notifications.slice(0, 10).map((n, i) => <div key={i} className="notif-item"><div className="notif-item-title">{n.title || n.type}</div><div className="notif-item-sub">{n.message || n.msg || ''}</div><div className="notif-item-time">{n.timestamp ? new Date(n.timestamp * 1000).toLocaleString() : 'just now'}</div></div>)}</div>
+            </div>
+            <button className="header-btn" onClick={() => setHeaderMinimized(true)} style={{ minWidth: 44, minHeight: 44, fontSize: 14, padding: '6px 12px' }} title="Minimize header">⤡</button>
+            <button className="header-btn" onClick={onLogout} style={{ minWidth: 44, minHeight: 44 }}>Logout</button>
+          </div>
+        </>
+      )}
     </header>
     <div className="tab-bar">{TABS.map(t => <button key={t.key} className={`tab-btn ${dashTab === t.key ? 'active' : ''}`} onClick={() => { const idx = MODULES.findIndex(m => m.content === t.key); if (idx >= 0) goToModule(idx) }}>{t.label}</button>)}</div>
     <div className="dashboard-container">
@@ -1326,7 +1491,7 @@ function Dashboard({ onLogout, onLogoClick }) {
             <div className={`agent-status status-${ag.status}`} />
           </div>)}</div>
           <div style={{ borderTop: '1px solid var(--glass-border)', marginTop: 8, flex: 1, overflowY: 'auto' }}>
-            <div className="right-section"><div className="right-section-head"><div className="right-section-title">🌐 Commerce Pages</div></div><div className="right-section-body">{[['mcpolis.io/p/arb7732/eth-swap', '$47.20', '312'], ['mcpolis.io/p/arb7732/sol-arb', '$12.80', '87']].map((p, i) => <div key={i} className="page-card"><div className="page-url">{p[0]}</div><div className="page-stats"><div><div className="page-stat-val text-success">{p[1]}</div><div className="page-stat-label">Revenue</div></div><div><div className="page-stat-val text-cyan">{p[2]}</div><div className="page-stat-label">Visits</div></div></div></div>)}</div></div>
+            <div className="right-section"><div className="right-section-head"><div className="right-section-title">🌐 Commerce Pages</div></div><div className="right-section-body">{commercePages.length === 0 ? <div style={{ fontSize: 10, color: 'var(--text-faint)', padding: 8 }}>No pages yet. Create a page from Settings.</div> : commercePages.map((p, i) => <div key={i} className="page-card"><div className="page-url">mcpolis.io/p/{p.page_url}</div><div className="page-stats"><div><div className="page-stat-val text-cyan">{p.views || 0}</div><div className="page-stat-label">Views</div></div></div></div>)}</div></div>
             <div className="right-section"><div className="right-section-head"><div className="right-section-title">💳 Financial Accounts</div></div><div className="right-section-body" style={{ paddingTop: 8 }}><div className="wallet-type text-dim">Stripe</div><div className="wallet-row">acct_1P\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022</div><div className="wallet-type text-dim" style={{ marginTop: 8 }}>ETH</div><div className="wallet-row">0x7a3f9c2e1b8d4f6a\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022b9e2</div><div className="wallet-type text-dim" style={{ marginTop: 8 }}>SOL</div><div className="wallet-row">Gh7k\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u20224mNq</div></div></div>
             <div className="right-section"><div className="right-section-head"><div className="right-section-title">🌀 Network Stats</div></div><div className="right-section-body" style={{ paddingTop: 8 }}><div className="stat-row"><span className="stat-label">Agents hired</span><span className="stat-val text-purple">4</span></div><div className="stat-row"><span className="stat-label">Hired by</span><span className="stat-val text-cyan">2</span></div><div className="stat-row"><span className="stat-label">Revenue share</span><span className="stat-val text-gold">$3.80</span></div></div></div>
             <div className="right-section"><div className="right-section-head"><div className="right-section-title">📊 Fee Summary</div></div><div className="right-section-body" style={{ paddingTop: 4 }}><div className="donut-wrap"><DonutChart /><div className="fee-legend">{[['var(--cyan)', 'API (0.5%)', '$0.22'], ['var(--purple)', 'Hire (1%)', '$0.18'], ['var(--gold)', 'Commerce (0.5%)', '$0.10']].map((f, i) => <div key={i} className="fee-item"><div className="fee-dot" style={{ background: f[0] }} /><div className="fee-label">{f[1]}</div><div className="fee-val" style={{ color: f[0] }}>{f[2]}</div></div>)}</div></div><div className="glow-line" /><div className="stat-row"><span className="stat-label">Total fees</span><span className="stat-val">$0.50</span></div></div></div>
