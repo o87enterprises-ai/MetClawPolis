@@ -599,7 +599,7 @@ function CreateAgentModal({ open, onClose, onCreated }) {
           {result.avatarShape === 'cube' ? '🧊' : result.avatarShape === 'sphere' ? '🔮' : result.avatarShape === 'diamond' ? '💎' : result.avatarShape === 'pyramid' ? '🔺' : result.avatarShape === 'star' ? '\u2B50' : '\u2B21'}
         </div>
         <div className="agent-id-box">{result.did}</div>
-        <div className="key-reveal"><div className="key-warning">\u26A0\uFE0F Store this private key. It will not be shown again.</div><div className="key-box mono" style={{ fontSize: 9 }}>{result.pk}</div></div>
+        <div className="key-reveal"><div className="key-warning">⚠️ Store this private key. It will not be shown again.</div><div className="key-box mono" style={{ fontSize: 9 }}>{result.pk}</div></div>
         {/* Live Birth Option */}
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--glass-border)' }}>
           <div style={{ fontSize: 16, fontWeight: 600, color: '#00f5ff', marginBottom: 8 }}>🎮 Live Birth in Bitiverse?</div>
@@ -689,7 +689,7 @@ function LogStream({ isPaused }) {
 
   const filtered = logs.filter(e => !filter || e.msg.toLowerCase().includes(filter.toLowerCase()) || e.type.toLowerCase().includes(filter.toLowerCase()))
   return (<>
-    <div className="log-header"><div className="log-title">\u26D3 Immutable Action Log</div><input className="log-search" placeholder="filter\u2026" value={filter} onChange={e => setFilter(e.target.value)} /></div>
+    <div className="log-header"><div className="log-title">⛓ Immutable Action Log</div><input className="log-search" placeholder="filter…" value={filter} onChange={e => setFilter(e.target.value)} /></div>
     <div className="log-stream">
       {loading ? <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-dim)' }}>Loading chain...</div> :
       filtered.length === 0 ? <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-faint)' }}>No actions logged yet.</div> :
@@ -963,7 +963,7 @@ function TerminalTab() {
   useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight }, [lines])
 
   return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Terminal {connected ? <span style={{ fontSize: 10, color: 'var(--success)' }}>● Connected</span> : <span style={{ fontSize: 10, color: 'var(--error)' }}>● Disconnected</span>}</h3>
-    <div className="terminal"><div className="terminal-header"><div className="terminal-dots"><div className="terminal-dot r" /><div className="terminal-dot y" /><div className="terminal-dot g" /></div><div className="terminal-title">metclawpolis \u2014 agent-shell</div></div>
+    <div className="terminal"><div className="terminal-header"><div className="terminal-dots"><div className="terminal-dot r" /><div className="terminal-dot y" /><div className="terminal-dot g" /></div><div className="terminal-title">metclawpolis — agent-shell</div></div>
       <div className="terminal-body" ref={bodyRef}>{lines.map((l, i) => <div key={i} className={`terminal-line ${l.cls}`}>{l.text}</div>)}</div>
       <div className="terminal-input-row"><span className="terminal-prompt">\u2192</span><input className="terminal-input" value={cmd} onChange={e => setCmd(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && cmd.trim()) { runCmd(cmd.trim()); setCmd('') } }} placeholder="Type command..." /></div>
     </div></div>
@@ -987,7 +987,7 @@ function MessagesTab() {
 
 function FlowchartTab() {
   const { agents } = useStore()
-  return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Agent Flowchart \u2014 Chain of Command &amp; Network</h3><div className="flowchart-container"><FlowchartCanvas agents={agents} /></div></div>
+  return <div className="tab-content"><h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Agent Flowchart — Chain of Command &amp; Network</h3><div className="flowchart-container"><FlowchartCanvas agents={agents} /></div></div>
 }
 
 function SettingsTab() {
@@ -1235,10 +1235,10 @@ function Landing({ onLaunch, onLogoClick }) {
       <div className="nav-links"><button className="nav-link" onClick={onLogoClick}>Home</button><button className="btn-ghost" onClick={onLaunch}>Dashboard</button></div>
     </nav>
     <div className="hero">
-      <div className="hero-eyebrow">Agentic Economic x&apos;Chain-ge <span style={{ opacity: 0.5 }}>\u2014 AEXC</span></div>
+      <div className="hero-eyebrow">Agentic Economic x&apos;Chain-ge <span style={{ opacity: 0.5 }}>— AEXC</span></div>
       <h1 className="hero-title">Agents Work.<br /><span className="accent-cyan">You Oversee</span> the<br /><span className="accent-purple">Commerce Engine.</span></h1>
       <p className="hero-sub" style={{ marginBottom: 24 }}>{descriptions[step]}</p>
-      <div className="cta-row"><button className="btn-primary" onClick={onLaunch}>\u26A1 Launch Dashboard</button><button className="btn-secondary" onClick={onLaunch}>🔗 Bring Your Own Agent</button></div>
+      <div className="cta-row"><button className="btn-primary" onClick={onLaunch}>⚡ Launch Dashboard</button><button className="btn-secondary" onClick={onLaunch}>🔗 Bring Your Own Agent</button></div>
       <div id="hero-canvas" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }}>
         <Canvas camera={{ position: [0, 0, 6], fov: 50 }}><LandingAnimation phase={step} /></Canvas>
       </div>
@@ -1307,7 +1307,7 @@ function Chatbot() {
   return <div id="chatbot">
     <div className="chat-orb" onClick={() => setOpen(!open)}>🤖</div>
     <div className={`chat-window ${open ? 'open' : ''}`}>
-      <div className="chat-head"><div className="chat-aide-avatar">\u2726</div><div className="chat-head-info"><div className="chat-head-name">Aide</div><div className="chat-head-status">online</div></div></div>
+      <div className="chat-head"><div className="chat-aide-avatar">✦</div><div className="chat-head-info"><div className="chat-head-name">Aide</div><div className="chat-head-status">online</div></div></div>
       <div className="chat-msgs" ref={msgsRef}>{msgs.map((m, i) => <div key={i} className={`chat-msg ${m.role}`}><div className="chat-bubble" dangerouslySetInnerHTML={{ __html: m.html }} />{m.quick && <div className="quick-replies">{m.quick.map(q => <div key={q.key} className="quick-reply" onClick={() => reply(q.label)}>{q.label}</div>)}</div>}</div>)}
         {typing && <div className="chat-msg aide"><div className="chat-bubble"><div className="chat-typing"><div className="typing-dot" /><div className="typing-dot" /><div className="typing-dot" /></div></div></div>}</div>
       <div className="chat-input-row"><input className="chat-input" placeholder="Ask Aide\u2026" onKeyDown={e => { if (e.key === 'Enter' && e.target.value.trim()) { reply(e.target.value); e.target.value = '' } }} /><button className="chat-send" onClick={() => { const inp = document.querySelector('.chat-input'); if (inp?.value.trim()) { reply(inp.value); inp.value = '' } }}>&#x27A4;</button></div>
@@ -1373,6 +1373,7 @@ function Dashboard({ onLogout, onLogoClick }) {
   const [moduleIdx, setModuleIdx] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarMinimized, setSidebarMinimized] = useState(false)
+  const [headerMinimized, setHeaderMinimized] = useState(false)
   const [sidebarPosition, setSidebarPosition] = useState({ left: 0, top: 0 })
   const [commercePages, setCommercePages] = useState([])
   const modulesRef = useRef(null)
@@ -1485,7 +1486,7 @@ function Dashboard({ onLogout, onLogoClick }) {
           <div className="agents-list">{agents.map((ag, i) => <div key={i} className={`agent-item ${i === currentAgentIdx ? 'active' : ''}`} onClick={() => setCurrentAgent(i)}>
             <div className="agent-avatar-wrap" style={{ background: ag.color + '22', border: `1px solid ${ag.color}44` }}>
               <svg width="32" height="32" viewBox="0 0 32 32"><rect x="8" y="8" width="16" height="16" rx="2" fill="none" stroke={ag.color} strokeWidth="1.5" /><circle cx="13" cy="14" r="2" fill={ag.color} /><circle cx="19" cy="14" r="2" fill={ag.color} /></svg>
-              {ag.ext && <div className="ext-badge">\u26A1</div>}
+              {ag.ext && <div className="ext-badge">⚡</div>}
             </div>
             <div className="agent-info"><div className="agent-name">{ag.id}</div><div className="agent-spend mono">${ag.spend}/${ag.budget}</div></div>
             <div className={`agent-status status-${ag.status}`} />
